@@ -34,7 +34,8 @@ const recommendationRoutes = require("./routes/recommendation");
 app.use("/api/recommendation", recommendationRoutes);
 
 const expenseRoutes = require("./routes/expense");
-app.use("/api/expense", expenseRoutes);
+app.use("/api/expenses", expenseRoutes);
+
 
 const analyticsRoutes = require("./routes/analytics");
 app.use("/api/analytics", analyticsRoutes);

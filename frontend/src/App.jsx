@@ -4,6 +4,8 @@ import Dashboard from "./pages/Dashboard";
 import FarmForm from "./pages/FarmForm";
 import FertilizerForm from "./pages/FertilizerForm";
 import FarmDetails from "./pages/FarmDetails";
+import ExpenseAnalytics from "./pages/ExpenseAnalytics";
+
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -20,6 +22,9 @@ function AppRoutes() {
       <Route path="/farm/:farmId" element={<FarmDetails />} />
       <Route path="/add-farm" element={<FarmForm />} />
       <Route path="/add-fertilizer" element={<FertilizerForm />} />
+      <Route path="/expenses" element={<ExpenseAnalytics />} />
+
+      
     </Routes>
   );
 }

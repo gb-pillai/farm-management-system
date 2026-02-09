@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import "./Login.css";
 
 function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
+
 
   const handleLogin = async () => {
     try {
@@ -19,9 +23,10 @@ function Login({ onLoginSuccess }) {
 
       if (data.success) {
         // ✅ store userId for later use
-        localStorage.setItem("userId", data.userId);
-        
-
+        if (data.success) {
+          localStorage.setItem("userId", data.userId);
+          navigate("/dashboard");
+        }
         setMessage("Login successful");
         onLoginSuccess(); // navigate to dashboard
       }

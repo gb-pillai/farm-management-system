@@ -11,26 +11,46 @@ router.post("/add", async (req, res) => {
     res.json({
       success: true,
       message: "Expense added successfully",
-      expense
+      expense,
     });
   } catch (error) {
-  console.error("Expense save error:", error.message);
-
-  res.status(500).json({
-    success: false,
-    message: error.message
-  });
-}
-
+    console.error("Expense save error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
 // ✅ GET EXPENSES BY FARM
 router.get("/farm/:farmId", async (req, res) => {
   try {
-    const expenses = await Expense.find({ farmId: req.params.farmId });
+    const expenses = await Expense.find({
+      farmId: req.params.farmId,
+    });
     res.json({ success: true, expenses });
   } catch (error) {
     res.status(500).json({ success: false });
+  }
+});
+
+// ✅ GET EXPENSES BY USER (ALL FARMS)
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const expenses = await Expense.find({
+      userId: req.params.userId,
+    }).populate("farmId", "farmName");
+
+    res.json({
+      success: true,
+      data: expenses,
+    });
+  } catch (error) {
+    console.error("Get expenses by user error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 });
 

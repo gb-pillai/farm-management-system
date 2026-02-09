@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import FertilizerStatusChart from "../components/charts/FertilizerStatusChart";
 import ProfitPerFarmChart from "../components/charts/ProfitPerFarmChart";
 import FarmUsageChart from "../components/charts/FarmUsageChart";
+import ExpensePie from "../components/charts/ExpensePie";
+import React from "react";
 import "./Dashboard.css";
 
 
@@ -17,6 +19,7 @@ function Dashboard() {
     overdue: 0,
     dueSoon: 0,
   });
+  const [expenseCategoryData, setExpenseCategoryData] = useState([]);
 
   const navigate = useNavigate();
 
@@ -69,6 +72,23 @@ function Dashboard() {
 
       
   }, [navigate]);
+  useEffect(() => {
+  if (!farms.length) return;
+
+  // Use the first farm for now
+  const farmId = farms[0]._id;
+
+  fetch(`http://localhost:5000/api/analytics/expenses/category/${farmId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        setExpenseCategoryData(data.data);
+      }
+    })
+    .catch(err => console.error(err));
+
+}, [farms]);
+
 
   return (
     <div className="dashboard-container">
@@ -113,6 +133,16 @@ function Dashboard() {
         data={{ normal: 3, dueSoon: 1, overdue: 0 }}
       />
     </div>
+
+    <div className="chart-card"onClick={() => navigate("/expenses")} style={{ cursor: "pointer" }}>
+      <h3>Expense Breakdown</h3>
+      <ExpensePie data={expenseCategoryData} />
+      <p style={{ textAlign: "center", marginTop: "8px", fontSize: "13px" }}>
+        Click to view detailed expense analytics
+      </p>
+    </div>
+
+
 
     <div className="chart-card">
       <h3>Profit per Farm</h3>
