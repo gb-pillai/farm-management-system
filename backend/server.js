@@ -33,6 +33,14 @@ app.use("/api/fertilizer", fertilizerRoutes);
 const recommendationRoutes = require("./routes/recommendation");
 app.use("/api/recommendation", recommendationRoutes);
 
+const expenseRoutes = require("./routes/expense");
+app.use("/api/expense", expenseRoutes);
+
+const analyticsRoutes = require("./routes/analytics");
+app.use("/api/analytics", analyticsRoutes);
+
+
+
 // Test
 app.get("/", (req, res) => {
   res.send("Backend running");
