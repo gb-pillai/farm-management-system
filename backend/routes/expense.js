@@ -38,8 +38,9 @@ router.get("/farm/:farmId", async (req, res) => {
 router.get("/user/:userId", async (req, res) => {
   try {
     const expenses = await Expense.find({
-      userId: req.params.userId,
+        userId: req.params.userId,
     }).populate("farmId", "farmName");
+
 
     res.json({
       success: true,
