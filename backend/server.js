@@ -40,6 +40,7 @@ app.use("/api/expenses", expenseRoutes);
 const analyticsRoutes = require("./routes/analytics");
 app.use("/api/analytics", analyticsRoutes);
 
+app.use("/api/income", require("./routes/income"));
 
 
 // Test

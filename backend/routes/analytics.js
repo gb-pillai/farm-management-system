@@ -5,10 +5,50 @@ const mongoose = require("mongoose");
 const Expense = require("../models/Expense");
 const Farm = require("../models/Farm");
 const Fertilizer = require("../models/Fertilizer");
+const Income = require("../models/Income");
+
 
 /* =====================================================
    FARM-LEVEL ANALYTICS (EXISTING – KEPT)
 ===================================================== */
+
+
+// ✅ FARM PROFIT SUMMARY (REAL-TIME)
+router.get("/farm/profit/:farmId", async (req, res) => {
+  try {
+    const { farmId } = req.params;
+    const farmObjectId = new mongoose.Types.ObjectId(farmId);
+
+    // 🔴 TOTAL EXPENSE (from Expense collection)
+    const expenseAgg = await Expense.aggregate([
+      { $match: { farmId: farmObjectId } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+
+    const totalExpense = expenseAgg[0]?.total || 0;
+
+    // 🟢 TOTAL INCOME (from Income collection)
+    const incomeAgg = await Income.aggregate([
+      { $match: { farmId: farmObjectId } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+    ]);
+
+const totalIncome = incomeAgg[0]?.total || 0;
+
+
+    const profit = totalIncome - totalExpense;
+
+    res.json({
+      success: true,
+      totalExpense,
+      totalIncome,
+      profit
+    });
+  } catch (error) {
+    console.error("Farm profit error:", error.message);
+    res.status(500).json({ success: false });
+  }
+});
 
 
 // ✅ EXPENSE BY CATEGORY (PER FARM)

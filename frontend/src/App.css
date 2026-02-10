@@ -1,0 +1,17 @@
+/* Global page centering */
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    /* horizontal center */
+    align-items: center;
+    /* vertical center */
+    background-color: #121212;
+    /* your dark theme */
+}
+
+#root {
+  width: 100%;
+  max-width: 1400px;   /* adjust if needed */
+}

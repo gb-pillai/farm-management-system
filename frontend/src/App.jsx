@@ -7,7 +7,8 @@ import FarmDetails from "./pages/FarmDetails";
 import ExpenseAnalytics from "./pages/ExpenseAnalytics";
 import FarmExpenseAnalytics from "./pages/FarmExpenseAnalytics";
 import AddExpense from "./pages/AddExpense";
-
+import AddIncome from "./pages/AddIncome";
+import './App.css'
 
 function AppRoutes() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ function AppRoutes() {
       <Route path="/farm/:farmId/expenses"element={<FarmExpenseAnalytics />}/>
       <Route path="/farm/:farmId/add-expense" element={<AddExpense />}/>
       <Route path="/expenses/edit/:id" element={<AddExpense />} />
+      <Route path="/farm/:farmId/income/add" element={<AddIncome />} />
 
 
       
