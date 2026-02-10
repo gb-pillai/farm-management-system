@@ -90,85 +90,95 @@ function Dashboard() {
 }, [farms]);
 
 
-  return (
-    <div className="dashboard-container">
-      <h1 className="dashboard-title">🌾 Farm Dashboard</h1>
+ return (
+  <div className="dashboard-container">
+    {/* HEADER */}
+    <div className="dashboard-header">
+      <h1>🌾 Farm Dashboard</h1>
+      <p className="subtitle">Overview of your farms, expenses & fertilizers</p>
+    </div>
 
-      
-      {/* SUMMARY CARDS */}
-      <div className="summary-grid">
-        <div className="summary-card">
-          <span className="icon">📁</span>
-          <h3>Farms</h3>
-          <p>{summary.totalFarms}</p>
-        </div>
-
-        <div className="summary-card">
-          <span className="icon">🌱</span>
-          <h3>Fertilizers</h3>
-          <p>{summary.totalFertilizers}</p>
-        </div>
-
-        <div className="summary-card overdue">
-          <span className="icon">🔴</span>
-          <h3>Overdue</h3>
-          <p>{summary.overdue}</p>
-        </div>
-
-        <div className="summary-card due-soon">
-          <span className="icon">🟡</span>
-          <h3>Due Soon</h3>
-          <p>{summary.dueSoon}</p>
+    {/* SUMMARY CARDS */}
+    <div className="summary-grid">
+      <div className="summary-card">
+        <span className="icon">📁</span>
+        <div>
+          <p className="label">Farms</p>
+          <h2>{summary.totalFarms}</h2>
         </div>
       </div>
-      
-<section className="charts-section">
-  <h2 className="charts-title">📊 Analytics Overview</h2>
 
-  <div className="charts-grid">
+      <div className="summary-card">
+        <span className="icon">🌱</span>
+        <div>
+          <p className="label">Fertilizers</p>
+          <h2>{summary.totalFertilizers}</h2>
+        </div>
+      </div>
 
-    <div className="chart-card">
-      <h3>Fertilizer Status</h3>
-      <FertilizerStatusChart
-        data={{ normal: 3, dueSoon: 1, overdue: 0 }}
-      />
+      <div className="summary-card danger">
+        <span className="icon">🔴</span>
+        <div>
+          <p className="label">Overdue</p>
+          <h2>{summary.overdue}</h2>
+        </div>
+      </div>
+
+      <div className="summary-card warning">
+        <span className="icon">🟡</span>
+        <div>
+          <p className="label">Due Soon</p>
+          <h2>{summary.dueSoon}</h2>
+        </div>
+      </div>
     </div>
 
-    <div className="chart-card"onClick={() => navigate("/expenses")} style={{ cursor: "pointer" }}>
-      <h3>Expense Breakdown</h3>
-      <ExpensePie data={expenseCategoryData} />
-      <p style={{ textAlign: "center", marginTop: "8px", fontSize: "13px" }}>
-        Click to view detailed expense analytics
-      </p>
-    </div>
+    {/* ANALYTICS */}
+    <section className="analytics-section">
+      <h2 className="section-title">📊 Analytics Overview</h2>
 
+      <div className="charts-grid">
+        <div className="chart-card">
+          <h3>Fertilizer Status</h3>
+          <FertilizerStatusChart
+            data={{ normal: 3, dueSoon: 1, overdue: 0 }}
+          />
+        </div>
 
+        <div
+          className="chart-card clickable"
+          onClick={() => navigate("/expenses")}
+        >
+          <h3>Expense Breakdown</h3>
+          <ExpensePie data={expenseCategoryData} />
+          <p className="hint">Click to view detailed expenses</p>
+        </div>
 
-    <div className="chart-card">
-      <h3>Profit per Farm</h3>
-      <ProfitPerFarmChart
-        farms={[
-          { farm: "Rice Field", profit: 40000 },
-          { farm: "Coconut Farm", profit: 30000 },
-        ]}
-      />
-    </div>
+        <div className="chart-card">
+          <h3>Profit per Farm</h3>
+          <ProfitPerFarmChart
+            farms={[
+              { farm: "Rice Field", profit: 40000 },
+              { farm: "Coconut Farm", profit: 30000 },
+            ]}
+          />
+        </div>
 
-    <div className="chart-card">
-      <h3>Fertilizer Usage</h3>
-      <FarmUsageChart
-        data={[
-          { farm: "Rice Field", count: 5 },
-          { farm: "Coconut Farm", count: 2 },
-        ]}
-      />
-    </div>
+        <div className="chart-card">
+          <h3>Fertilizer Usage</h3>
+          <FarmUsageChart
+            data={[
+              { farm: "Rice Field", count: 5 },
+              { farm: "Coconut Farm", count: 2 },
+            ]}
+          />
+        </div>
+      </div>
+    </section>
 
-  </div>
-</section>
-<section className="farms-section">
-      {/* FARMS LIST */}
-      <h2 className="section-title">Your Farms</h2>
+    {/* FARMS */}
+    <section className="farms-section">
+      <h2 className="section-title">🌾 Your Farms</h2>
 
       {farms.length === 0 ? (
         <p className="no-data">No farm data available</p>
@@ -182,22 +192,21 @@ function Dashboard() {
             >
               <h4>{farm.farmName}</h4>
               <p>{farm.cropName}</p>
+              <span className="view-link">View →</span>
             </div>
           ))}
         </div>
       )}
 
       <button
-        className="add-farm-btn"
+        className="primary-btn add-farm-btn"
         onClick={() => navigate("/add-farm")}
       >
         ➕ Add New Farm
       </button>
-      </section>
-    </div>
-  );
-  
+    </section>
+  </div>
+);
 }
-
 
 export default Dashboard;

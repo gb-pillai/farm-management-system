@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
+import "./FarmDetails.css"
 
 function FarmDetails() {
   const [uiMessage, setUiMessage] = useState("");
@@ -136,223 +136,181 @@ const applyRecommendation = async () => {
   if (!farm) return <p>Loading farm details...</p>;
 
   return (
-    <div style={{ padding: "20px" }}>
+  <div className="farm-details-container">
+    {/* FARM HEADER */}
+    <div className="farm-header card">
       <h2>{farm.farmName}</h2>
 
-      <p><strong>Location:</strong> {farm.location}</p>
-      <p><strong>Crop:</strong> {farm.cropName}</p>
-      <p><strong>Area:</strong> {farm.areaInAcres} acres</p>
-      <p><strong>Season:</strong> {farm.season}</p>
+      <div className="farm-meta">
+        <p><strong>Location:</strong> {farm.location}</p>
+        <p><strong>Crop:</strong> {farm.cropName}</p>
+        <p><strong>Area:</strong> {farm.areaInAcres} acres</p>
+        <p><strong>Season:</strong> {farm.season}</p>
+      </div>
+    </div>
 
-      <hr />
-
+    {/* FERTILIZER HISTORY */}
+    <div className="card">
       <h3>🌱 Fertilizer History</h3>
 
       {fertilizers.length === 0 ? (
-        <p>No fertilizer records found</p>
+        <p className="empty-text">No fertilizer records found</p>
       ) : (
         fertilizers.map((f) => {
           const today = new Date();
           let status = "normal";
 
-          if (!f.nextDueDate) {
-            status = "no-date";
-          } else {
+          if (!f.nextDueDate) status = "no-date";
+          else {
             const dueDate = new Date(f.nextDueDate);
-
-            if (dueDate < today) {
-              status = "overdue";
-            } else if (dueDate - today <= 3 * 24 * 60 * 60 * 1000) {
+            if (dueDate < today) status = "overdue";
+            else if (dueDate - today <= 3 * 24 * 60 * 60 * 1000)
               status = "due-soon";
-            }
           }
 
           return (
-            <div
-              key={f._id}
-              style={{
-                border: "1px solid #ccc",
-                padding: "12px",
-                marginBottom: "12px",
-              }}
-            >
-              <p>
-                <strong>{f.fertilizerName}</strong> –{" "}
-                {f.quantity} {f.unit}
-              </p>
+            <div key={f._id} className="fertilizer-card">
+              <div className="fert-header">
+                <span className="fert-name">
+                  {f.fertilizerName} – {f.quantity} {f.unit}
+                </span>
 
-              <p>
-                📅 Applied:{" "}
-                {new Date(f.appliedDate).toDateString()}
-              </p>
+                <span className={`status-badge ${status}`}>
+                  {status === "overdue" && "🔴 Overdue"}
+                  {status === "due-soon" && "🟡 Due Soon"}
+                  {status === "normal" && "🟢 Normal"}
+                  {status === "no-date" && "⚠️ No Schedule"}
+                </span>
+              </div>
+
+              <p>📅 Applied: {new Date(f.appliedDate).toDateString()}</p>
 
               {f.nextDueDate && (
-                <p>
-                  📅 Next Due:{" "}
-                  {new Date(f.nextDueDate).toDateString()}
-                </p>
+                <p>📅 Next Due: {new Date(f.nextDueDate).toDateString()}</p>
               )}
 
-              <span
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  background:
-                    status === "overdue"
-                      ? "#f8d7da"
-                      : status === "due-soon"
-                      ? "#fff3cd"
-                      : "#d4edda",
-                  color:
-                    status === "overdue"
-                      ? "#721c24"
-                      : status === "due-soon"
-                      ? "#856404"
-                      : "#155724",
-                }}
-              >
-                {status === "overdue" && "🔴 Overdue"}
-                {status === "due-soon" && "🟡 Due Soon"}
-                {status === "normal" && "🟢 Normal"}
-                {status === "no-date" && "⚠️ No Schedule"}
-              </span>
-
-
-              {f.notes && <p>📝 {f.notes}</p>}
+              {f.notes && <p className="notes">📝 {f.notes}</p>}
             </div>
           );
         })
       )}
 
-      <button onClick={() => navigate(`/add-fertilizer?farmId=${farm._id}`)}>
+      <button
+        className="primary-btn"
+        onClick={() => navigate(`/add-fertilizer?farmId=${farm._id}`)}
+      >
         ➕ Add Fertilizer
       </button>
+    </div>
 
-      <hr />
-      {uiMessage && (
-        <div
-          style={{
-            padding: "10px",
-            marginBottom: "12px",
-            borderRadius: "6px",
-            background:
-              uiType === "success"
-                ? "#d4edda"
-                : uiType === "error"
-                ? "#f8d7da"
-                : "#e2e3e5",
-            color:
-              uiType === "success"
-                ? "#155724"
-                : uiType === "error"
-                ? "#721c24"
-                : "#383d41",
-          }}
+    {/* UI MESSAGE */}
+    {uiMessage && (
+      <div className={`alert ${uiType}`}>
+        {uiMessage}
+      </div>
+    )}
+
+    {/* EXPENSE SECTION */}
+    <div className="card">
+      <h3>💰 Expense</h3>
+
+      <div className="button-row">
+        <button onClick={() => navigate(`/farm/${farm._id}/expenses`)}>
+          View Expenses
+        </button>
+
+        <button onClick={() => navigate(`/farm/${farm._id}/add-expense`)}>
+          ➕ Add Expense
+        </button>
+
+        <button
+          className="add-income-btn"
+          onClick={() => navigate(`/farm/${farmId}/income/add`)}
         >
-          {uiMessage}
-        </div>
-      )}
-      <h1>Expense</h1>
-      <button
-        onClick={() => navigate(`/farm/${farm._id}/expenses`)}
-      >
-        View Expenses
-      </button>
+          + Add Income
+        </button>
+      </div>
+    </div>
 
+    {/* FERTILIZER RECOMMENDATION */}
+    <div className="card recommendation-card">
+  <h3 className="section-title">📊 Fertilizer Recommendation</h3>
 
-      <button onClick={() => navigate(`/farm/${farm._id}/add-expense`)}>
-        ➕ Add Expense
-      </button>
-      <button className="add-income-btn" onClick={() => navigate(`/farm/${farmId}/income/add`)}>
-        + Add Income
-      </button>
+  <div className="rec-form">
+    <input
+      type="text"
+      placeholder="Fertilizer name (e.g. Urea)"
+      value={fertilizerName}
+      onChange={(e) => setFertilizerName(e.target.value)}
+    />
 
-
-
-
-
-      <h3>📊 Fertilizer Recommendation</h3>
-
-      <input
-        placeholder="Fertilizer name (e.g. Urea)"
-        value={fertilizerName}
-        onChange={(e) => setFertilizerName(e.target.value)}
-      />
-      
-      <br /><br />
-
-      <select
-        value={stage}
-        onChange={(e) => setStage(e.target.value)}
-      >
-        <option value="" disabled>Select Crop Stage</option>
-        <option value="sowing">Sowing</option>
-        <option value="seedling">Seedling</option>
-        <option value="vegetative">Vegetative</option>
-        <option value="flowering">Flowering</option>
-        <option value="fruiting">Fruiting</option>
-        <option value="harvest">Harvest</option>
-      </select>
-
-
-      <br /><br />
-
-      <input
-        type="date"
-        value={lastDate}
-        onChange={(e) => setLastDate(e.target.value)}
-      />
-
-      <br /><br />
-
-      <input
-        placeholder="Farmer Interval (optional)"
-        value={farmerInterval}
-        onChange={(e) => setFarmerInterval(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={calculateRecommendation}>
-        {loadingRec ? "Calculating..." : "Calculate Next Fertilizer"}
-      </button>
-
-      {recommendation && (
-  <div
-    style={{
-      marginTop: "15px",
-      border: "1px solid #aaa",
-      padding: "12px",
-    }}
-  >
-    <p><strong>Next Date:</strong> {recommendation.nextDate}</p>
-    <p><strong>Used Interval:</strong> {recommendation.usedInterval} days</p>
-    <p><strong>Message:</strong> {recommendation.message}</p>
-
-    <button
-      onClick={applyRecommendation}
-      disabled={applying}
-      style={{
-        marginTop: "10px",
-        opacity: applying ? 0.6 : 1,
-        cursor: applying ? "not-allowed" : "pointer",
-      }}
+    <select
+      value={stage}
+      onChange={(e) => setStage(e.target.value)}
     >
-      {applying ? "Applying..." : "✅ Apply Recommendation"}
-    </button>
+      <option value="" disabled>Select Crop Stage</option>
+      <option value="sowing">Sowing</option>
+      <option value="seedling">Seedling</option>
+      <option value="vegetative">Vegetative</option>
+      <option value="flowering">Flowering</option>
+      <option value="fruiting">Fruiting</option>
+      <option value="harvest">Harvest</option>
+    </select>
 
+    <input
+      type="date"
+      value={lastDate}
+      onChange={(e) => setLastDate(e.target.value)}
+    />
+
+    <input
+      type="number"
+      placeholder="Farmer Interval (optional)"
+      value={farmerInterval}
+      onChange={(e) => setFarmerInterval(e.target.value)}
+    />
   </div>
-)}
 
+  <button
+    className="primary-btn full-width"
+    onClick={calculateRecommendation}
+  >
+    {loadingRec ? "Calculating..." : "Calculate Next Fertilizer"}
+  </button>
 
-      <br /><br />
+  {recommendation && (
+    <div className="recommendation-result">
+      <div className="result-row">
+        <span>📅 Next Date</span>
+        <strong>{recommendation.nextDate}</strong>
+      </div>
 
-      <button onClick={() => navigate("/dashboard")}>
-        ⬅ Back to Dashboard
+      <div className="result-row">
+        <span>⏱ Interval Used</span>
+        <strong>{recommendation.usedInterval} days</strong>
+      </div>
+
+      <p className="result-message">
+        {recommendation.message}
+      </p>
+
+      <button
+        className="primary-btn"
+        onClick={applyRecommendation}
+        disabled={applying}
+      >
+        {applying ? "Applying..." : "✅ Apply Recommendation"}
       </button>
     </div>
-  );
+  )}
+</div>
+
+
+    <button className="back-btn" onClick={() => navigate("/dashboard")}>
+      ⬅ Back to Dashboard
+    </button>
+  </div>
+);
 }
 
 export default FarmDetails;
