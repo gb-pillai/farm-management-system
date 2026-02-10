@@ -127,22 +127,39 @@ router.get("/dashboard/expenses/:userId", async (req, res) => {
     res.status(500).json({ success: false });
   }
 });
-
-// ✅ DASHBOARD: PROFIT PER FARM
+// ✅ DASHBOARD: PROFIT PER FARM (REAL)
 router.get("/dashboard/profit/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
     const farms = await Farm.find({ userId });
 
-    const data = farms.map(farm => ({
-      farmId: farm._id,
-      farmName: farm.farmName,
-      profit: (farm.totalIncome || 0) - (farm.totalExpense || 0)
-    }));
+    const data = [];
+
+    for (const farm of farms) {
+      const income = await Income.aggregate([
+        { $match: { farmId: farm._id } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]);
+
+      const expense = await Expense.aggregate([
+        { $match: { farmId: farm._id } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]);
+
+      const totalIncome = income[0]?.total || 0;
+      const totalExpense = expense[0]?.total || 0;
+
+      data.push({
+        farmId: farm._id,
+        farmName: farm.farmName,
+        profit: totalIncome - totalExpense
+      });
+    }
 
     res.json({ success: true, data });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false });
   }
 });
@@ -202,5 +219,62 @@ router.get("/dashboard/fertilizer-usage/:userId", async (req, res) => {
     res.status(500).json({ success: false });
   }
 });
+
+
+router.get("/profit-per-farm", async (req, res) => {
+  const farms = await Farm.find();
+
+  const result = await Promise.all(
+    farms.map(async farm => {
+      const income = await Income.aggregate([
+        { $match: { farmId: farm._id } },
+        { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+      ]);
+
+      const expense = await Expense.aggregate([
+        { $match: { farmId: farm._id } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]);
+
+      return {
+        farm: farm.farmName,
+        profit:
+          (income[0]?.total || 0) - (expense[0]?.total || 0),
+      };
+    })
+  );
+
+  res.json(result);
+});
+
+
+router.get("/fertilizer-usage", async (req, res) => {
+  const data = await Fertilizer.aggregate([
+    {
+      $group: {
+        _id: "$farmId",
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $lookup: {
+        from: "farms",
+        localField: "_id",
+        foreignField: "_id",
+        as: "farm"
+      }
+    },
+    { $unwind: "$farm" },
+    {
+      $project: {
+        farm: "$farm.farmName",
+        count: 1
+      }
+    }
+  ]);
+
+  res.json(data);
+});
+
 
 module.exports = router;

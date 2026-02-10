@@ -102,4 +102,25 @@ router.get("/farm/:farmId", async (req, res) => {
   }
 });
 
+router.get("/status", async (req, res) => {
+  const today = new Date();
+
+  const fertilizers = await Fertilizer.find();
+
+  let normal = 0, dueSoon = 0, overdue = 0;
+
+  fertilizers.forEach(f => {
+    if (!f.nextDueDate) return;
+
+    const diff = new Date(f.nextDueDate) - today;
+
+    if (diff < 0) overdue++;
+    else if (diff <= 3 * 24 * 60 * 60 * 1000) dueSoon++;
+    else normal++;
+  });
+
+  res.json({ normal, dueSoon, overdue });
+});
+
+
 module.exports = router;

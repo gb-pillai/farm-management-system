@@ -14,13 +14,13 @@ const FarmExpenseAnalytics = () => {
     fetch(`http://localhost:5000/api/expenses/farm/${farmId}`)
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          setExpenses(data.expenses);
-        }
+        // ✅ backend now returns ARRAY directly
+        setExpenses(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [farmId]);
+
 
   useEffect(() => {
   fetch(`http://localhost:5000/api/expenses/analytics/category/${farmId}`)
@@ -36,10 +36,7 @@ const FarmExpenseAnalytics = () => {
     });
 }, [farmId]);
 
-  const totalExpense = expenses.reduce(
-    (sum, exp) => sum + exp.amount,
-    0
-  );
+  const totalExpense = expenses.reduce((sum, exp) => sum + Number(exp.amount || 0),0);
 
   const handleDelete = async (id) => {
   if (!window.confirm("Delete this expense?")) return;

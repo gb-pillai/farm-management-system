@@ -27,13 +27,16 @@ router.post("/add", async (req, res) => {
 router.get("/farm/:farmId", async (req, res) => {
   try {
     const expenses = await Expense.find({
-      farmId: req.params.farmId,
+      farmId: new mongoose.Types.ObjectId(req.params.farmId),
     });
-    res.json({ success: true, expenses });
+
+    res.json(expenses); // ✅ return array directly
   } catch (error) {
-    res.status(500).json({ success: false });
+    console.error("Get expenses by farm error:", error.message);
+    res.status(500).json([]);
   }
 });
+
 
 // ✅ GET EXPENSES BY USER (ALL FARMS)
 router.get("/user/:userId", async (req, res) => {

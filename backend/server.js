@@ -18,32 +18,27 @@ mongoose
   .catch(err => console.error(err));
 
 // Auth routes
-const authRoutes = require("./routes/auth");
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", require("./routes/auth"));
 
 // Farm routes
-const farmRoutes = require("./routes/farm");
-app.use("/api/farm", farmRoutes);
+app.use("/api/farm", require("./routes/farm"));
 
-// Farmer-entered fertilizers (MongoDB)
-const fertilizerRoutes = require("./routes/fertilizerRoutes");
-app.use("/api/fertilizer", fertilizerRoutes);
+// Fertilizer routes
+app.use("/api/fertilizer", require("./routes/fertilizerRoutes"));
 
-// Dataset-based recommendation engine
-const recommendationRoutes = require("./routes/recommendation");
-app.use("/api/recommendation", recommendationRoutes);
+// Recommendation routes
+app.use("/api/recommendation", require("./routes/recommendation"));
 
-const expenseRoutes = require("./routes/expense");
-app.use("/api/expenses", expenseRoutes);
+// Expense routes
+app.use("/api/expenses", require("./routes/expense"));
 
+// Analytics routes
+app.use("/api/analytics", require("./routes/analytics"));
 
-const analyticsRoutes = require("./routes/analytics");
-app.use("/api/analytics", analyticsRoutes);
-
+// Income routes
 app.use("/api/income", require("./routes/income"));
 
-
-// Test
+// Test route
 app.get("/", (req, res) => {
   res.send("Backend running");
 });

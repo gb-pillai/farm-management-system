@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose"); // ✅ ADD THIS
+const mongoose = require("mongoose");
 const Income = require("../models/Income");
 
 // ✅ ADD INCOME

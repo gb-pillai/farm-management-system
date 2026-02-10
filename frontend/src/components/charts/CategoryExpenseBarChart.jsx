@@ -3,7 +3,6 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
   ResponsiveContainer,
 } from "recharts";
 
@@ -13,13 +12,23 @@ function CategoryExpenseBarChart({ data }) {
   }
 
   return (
-    <div style={{ width: "100%", height: 320 }}>
-      <ResponsiveContainer>
+    <div
+      style={{
+        width: "600px",
+        height: "300px",
+        marginTop: "20px",
+      }}
+    >
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <XAxis dataKey="category" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="total" />
+          <XAxis dataKey="category" stroke="#aaa" />
+          <YAxis stroke="#aaa" />
+          <Bar
+            dataKey="total"
+            fill="#22c55e"
+            barSize={40}
+            isAnimationActive={false}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

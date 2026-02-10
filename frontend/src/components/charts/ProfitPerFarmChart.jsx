@@ -1,28 +1,44 @@
 import { Bar } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from "chart.js";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+export default function ProfitPerFarmChart({ data }) {
+  if (!data || !data.length) return <p>No profit data</p>;
 
-export default function ProfitPerFarmChart({ farms }) {
-  if (!farms) return <p>Loading chart...</p>;
+  const profits = data.map(d => d.profit);
 
   return (
     <div style={{ height: "260px" }}>
-    <Bar
-      data={{
-        labels: farms.map(f => f.farm),
-        datasets: [
-          {
-            label: "Profit (₹)",
-            data: farms.map(f => f.profit),
-          },
-        ],
-      }}
-      options={{
-            responsive: true,
-            maintainAspectRatio: false, // 🔑 IMPORTANT
+      <Bar
+        data={{
+          labels: data.map(d => d.farmName),
+          datasets: [
+            {
+              label: "Profit (₹)",
+              data: profits,
+              backgroundColor: profits.map(p =>
+                p >= 0 ? "#22c55e" : "#ef4444" // green profit, red loss
+              ),
+            },
+          ],
         }}
-    />
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
+          },
+        }}
+      />
     </div>
   );
 }

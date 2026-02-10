@@ -13,6 +13,7 @@ import "./Dashboard.css";
 
 function Dashboard() {
   const [farms, setFarms] = useState([]);
+  const [profitData, setProfitData] = useState([]);
   const [summary, setSummary] = useState({
     totalFarms: 0,
     totalFertilizers: 0,
@@ -72,6 +73,7 @@ function Dashboard() {
 
       
   }, [navigate]);
+
   useEffect(() => {
   if (!farms.length) return;
 
@@ -88,6 +90,20 @@ function Dashboard() {
     .catch(err => console.error(err));
 
 }, [farms]);
+
+useEffect(() => {
+  const userId = localStorage.getItem("userId");
+  if (!userId) return;
+
+  fetch(`http://localhost:5000/api/analytics/dashboard/profit/${userId}`)
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        setProfitData(result.data);
+      }
+    })
+    .catch(err => console.error(err));
+}, []);
 
 
  return (
@@ -140,9 +156,7 @@ function Dashboard() {
       <div className="charts-grid">
         <div className="chart-card">
           <h3>Fertilizer Status</h3>
-          <FertilizerStatusChart
-            data={{ normal: 3, dueSoon: 1, overdue: 0 }}
-          />
+          <FertilizerStatusChart summary={summary} />
         </div>
 
         <div
@@ -154,15 +168,7 @@ function Dashboard() {
           <p className="hint">Click to view detailed expenses</p>
         </div>
 
-        <div className="chart-card">
-          <h3>Profit per Farm</h3>
-          <ProfitPerFarmChart
-            farms={[
-              { farm: "Rice Field", profit: 40000 },
-              { farm: "Coconut Farm", profit: 30000 },
-            ]}
-          />
-        </div>
+        <ProfitPerFarmChart data={profitData} />
 
         <div className="chart-card">
           <h3>Fertilizer Usage</h3>
