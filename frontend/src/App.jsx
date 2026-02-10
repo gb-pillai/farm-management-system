@@ -27,6 +27,7 @@ function AppRoutes() {
       <Route path="/expenses" element={<ExpenseAnalytics />} />
       <Route path="/farm/:farmId/expenses"element={<FarmExpenseAnalytics />}/>
       <Route path="/farm/:farmId/add-expense" element={<AddExpense />}/>
+      <Route path="/expenses/edit/:id" element={<AddExpense />} />
 
 
       

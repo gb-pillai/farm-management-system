@@ -10,6 +10,7 @@ const Fertilizer = require("../models/Fertilizer");
    FARM-LEVEL ANALYTICS (EXISTING – KEPT)
 ===================================================== */
 
+
 // ✅ EXPENSE BY CATEGORY (PER FARM)
 router.get("/expenses/category/:farmId", async (req, res) => {
   try {

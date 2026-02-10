@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import "./FarmExpenseAnalytics.css"
+import CategoryExpenseBarChart from "../components/charts/CategoryExpenseBarChart";
 
 const FarmExpenseAnalytics = () => {
   const { farmId } = useParams();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [categoryData, setCategoryData] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,20 +22,52 @@ const FarmExpenseAnalytics = () => {
       .catch(() => setLoading(false));
   }, [farmId]);
 
+  useEffect(() => {
+  fetch(`http://localhost:5000/api/expenses/analytics/category/${farmId}`)
+    .then(res => res.json())
+    .then(result => {
+      if (result.success) {
+        const formatted = result.data.map(item => ({
+          category: item._id,
+          total: item.total,
+        }));
+        setCategoryData(formatted);
+      }
+    });
+}, [farmId]);
+
   const totalExpense = expenses.reduce(
     (sum, exp) => sum + exp.amount,
     0
   );
 
+  const handleDelete = async (id) => {
+  if (!window.confirm("Delete this expense?")) return;
+
+  await fetch(`http://localhost:5000/api/expenses/${id}`, {
+    method: "DELETE",
+  });
+
+  setExpenses(prev => prev.filter(e => e._id !== id));
+};
+
   return (
     <div style={{ padding: "20px" }}>
         <button className="back-btn" onClick={() => navigate(`/farm/${farmId}`)}>
-        ⬅ Back to Farm
+        ⬅ Back to Farms
         </button>
 
       <h1>🌾 Farm Expense Analytics</h1>
+      <button
+            className="add-expense-btn"
+            onClick={() => navigate(`/farm/${farmId}/add-expense`)}
+        >
+            + Add Expense
+        </button>
 
       <h3>Total Expense: ₹ {totalExpense}</h3>
+      <h3>Category-wise Expenses</h3>
+      <CategoryExpenseBarChart data={categoryData} />
 
       {loading ? (
         <p>Loading...</p>
@@ -46,6 +81,7 @@ const FarmExpenseAnalytics = () => {
               <th>Title</th>
               <th>Category</th>
               <th>Amount (₹)</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -55,7 +91,23 @@ const FarmExpenseAnalytics = () => {
                 <td>{exp.title}</td>
                 <td>{exp.category}</td>
                 <td>{exp.amount}</td>
+                <td>
+                <button
+                  className="edit-btn"
+                  onClick={() => navigate(`/expenses/edit/${exp._id}`)}
+                >
+                  ✏️
+                </button>
+
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDelete(exp._id)}
+                >
+                  🗑
+                </button>
+              </td>
               </tr>
+              
             ))}
           </tbody>
         </table>
