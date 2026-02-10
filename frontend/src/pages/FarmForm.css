@@ -1,0 +1,85 @@
+/* Page container */
+.farm-form-container {
+    max-width: 520px;
+    margin: 50px auto;
+    padding: 30px;
+    background: #1f1f1f;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    color: #ffffff;
+}
+
+/* Title */
+.farm-form-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 26px;
+    font-weight: 600;
+}
+
+/* Form layout */
+.farm-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Inputs */
+.farm-form input {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #ffffff;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+/* Focus */
+.farm-form input:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.25);
+}
+
+/* Submit button */
+.farm-form button {
+    margin-top: 10px;
+    padding: 12px;
+    background: linear-gradient(135deg, #4caf50, #43a047);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.farm-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(76, 175, 80, 0.45);
+}
+
+/* Message */
+.form-message {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.form-message.success {
+    color: #4caf50;
+}
+
+.form-message.error {
+    color: #f44336;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .farm-form-container {
+        margin: 20px;
+        padding: 22px;
+    }
+}

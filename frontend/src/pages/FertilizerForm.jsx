@@ -1,10 +1,10 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import "./FertilizerForm.css";
 
 function FertilizerForm() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-
   const farmId = searchParams.get("farmId");
 
   const [form, setForm] = useState({
@@ -15,24 +15,19 @@ function FertilizerForm() {
     notes: "",
   });
 
-  // Safety check
   if (!farmId) {
     return (
-      <div style={{ padding: "40px" }}>
-        <h2>Fertilizer Form</h2>
-        <p style={{ color: "red" }}>Farm ID not found</p>
+      <div className="form-page">
+        <div className="form-card">
+          <h2>Add Fertilizer</h2>
+          <p className="error-text">Farm ID not found</p>
+        </div>
       </div>
     );
   }
 
-  // ✅ FIXED SUBMIT HANDLER
   const handleSubmit = async () => {
-    if (
-      !form.name ||
-      !form.quantity ||
-      !form.date ||
-      !form.intervalDays
-    ) {
+    if (!form.name || !form.quantity || !form.date || !form.intervalDays) {
       alert("Please fill all required fields");
       return;
     }
@@ -42,9 +37,7 @@ function FertilizerForm() {
         "http://localhost:5000/api/fertilizer/add",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             fertilizerName: form.name,
             quantity: Number(form.quantity),
@@ -52,112 +45,97 @@ function FertilizerForm() {
             appliedDate: form.date,
             intervalDays: Number(form.intervalDays),
             notes: form.notes,
-            farmId: farmId,
-
-            // Phase-1 temporary values
+            farmId,
             userId: "000000000000000000000001",
             cropName: "Paddy",
           }),
         }
       );
 
-      const data = await response.json();
-
-      // ❌ Backend rejected request
       if (!response.ok) {
-        alert(data.error || "Failed to add fertilizer");
+        alert("Failed to add fertilizer");
         return;
       }
 
-      // ✅ Success
       alert("Fertilizer added successfully");
       navigate(-1);
-    } catch (error) {
-      console.error(error);
-      alert("Server error. Please try again.");
+    } catch {
+      alert("Server error");
     }
   };
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h2 style={{ marginBottom: "20px" }}>
-        Fertilizer Form
-      </h2>
+    <div className="form-page">
+      <div className="form-card">
+        <button className="back-btn" onClick={() => navigate(-1)}>
+            ← Back to Farmland
+          </button>
+        <h2 className="form-title">Add Fertilizer</h2>
 
-      <input
-        type="text"
-        placeholder="Fertilizer Name"
-        value={form.name}
-        onChange={(e) =>
-          setForm({ ...form, name: e.target.value })
-        }
-        style={inputStyle}
-      />
+        <div className="form-group">
+          <label>Fertilizer Name</label>
+          <input
+            type="text"
+            placeholder="Urea"
+            value={form.name}
+            onChange={(e) =>
+              setForm({ ...form, name: e.target.value })
+            }
+          />
+        </div>
 
-      <input
-        type="number"
-        placeholder="Quantity (kg)"
-        value={form.quantity}
-        onChange={(e) =>
-          setForm({ ...form, quantity: e.target.value })
-        }
-        style={inputStyle}
-      />
+        <div className="form-group">
+          <label>Quantity (kg)</label>
+          <input
+            type="number"
+            placeholder="25"
+            value={form.quantity}
+            onChange={(e) =>
+              setForm({ ...form, quantity: e.target.value })
+            }
+          />
+        </div>
 
-      <input
-        type="date"
-        value={form.date}
-        onChange={(e) =>
-          setForm({ ...form, date: e.target.value })
-        }
-        style={inputStyle}
-      />
+        <div className="form-group">
+          <label>Applied Date</label>
+          <input
+            type="date"
+            value={form.date}
+            onChange={(e) =>
+              setForm({ ...form, date: e.target.value })
+            }
+          />
+        </div>
 
-      <input
-        type="number"
-        placeholder="Interval (days)"
-        value={form.intervalDays}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            intervalDays: e.target.value,
-          })
-        }
-        style={inputStyle}
-      />
+        <div className="form-group">
+          <label>Interval (days)</label>
+          <input
+            type="number"
+            placeholder="15"
+            value={form.intervalDays}
+            onChange={(e) =>
+              setForm({ ...form, intervalDays: e.target.value })
+            }
+          />
+        </div>
 
-      <textarea
-        placeholder="Notes"
-        value={form.notes}
-        onChange={(e) =>
-          setForm({ ...form, notes: e.target.value })
-        }
-        style={{ ...inputStyle, height: "80px" }}
-      />
+        <div className="form-group">
+          <label>Notes</label>
+          <textarea
+            placeholder="Optional notes"
+            value={form.notes}
+            onChange={(e) =>
+              setForm({ ...form, notes: e.target.value })
+            }
+          />
+        </div>
 
-      <button onClick={handleSubmit} style={btnStyle}>
-        Save Fertilizer
-      </button>
+        <button className="primary-btn" onClick={handleSubmit}>
+          Save Fertilizer
+        </button>
+      </div>
     </div>
   );
 }
-
-const inputStyle = {
-  display: "block",
-  width: "300px",
-  padding: "10px",
-  marginBottom: "15px",
-  backgroundColor: "white",
-  color: "black",
-  border: "1px solid gray",
-};
-
-const btnStyle = {
-  padding: "10px 20px",
-  backgroundColor: "green",
-  color: "white",
-  border: "none",
-  cursor: "pointer",
-};
 
 export default FertilizerForm;

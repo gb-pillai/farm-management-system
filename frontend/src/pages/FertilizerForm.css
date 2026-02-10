@@ -1,0 +1,85 @@
+/* Full page layout */
+.form-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #0f172a;
+    /* same dark bg */
+}
+
+/* Card */
+.form-card {
+    width: 420px;
+    background-color: #111827;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Title */
+.form-title {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #ffffff;
+}
+
+/* Group */
+.form-group {
+    margin-bottom: 16px;
+}
+
+/* Labels */
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #d1d5db;
+}
+
+/* Inputs */
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #374151;
+    background-color: #020617;
+    color: white;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #22c55e;
+}
+
+/* Textarea */
+.form-group textarea {
+    height: 90px;
+    resize: none;
+}
+
+/* Primary button */
+.primary-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background-color: #22c55e;
+    color: black;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    background-color: #16a34a;
+}
+
+/* Error */
+.error-text {
+    color: #ef4444;
+    text-align: center;
+}

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./FarmForm.css";
 
 function FarmForm() {
   const [farmName, setFarmName] = useState("");
@@ -9,6 +11,7 @@ function FarmForm() {
   const [yieldAmount, setYieldAmount] = useState("");
   const [profit, setProfit] = useState("");
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,84 +61,85 @@ function FarmForm() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Add Farm Details</h2>
+  <div className="farm-form-container">
+    <button className="back-btn" onClick={() => navigate("/dashboard")}>
+      ⬅ Back to Dashboard
+    </button>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Farm Name (e.g. My Paddy Field)"
-          value={farmName}
-          onChange={(e) => setFarmName(e.target.value)}
-          required
-        />
+    <h2>🌾 Add Farm Details</h2>
 
-        <br /><br />
+    <form className="farm-form" onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Farm Name (e.g. My Paddy Field)"
+        value={farmName}
+        onChange={(e) => setFarmName(e.target.value)}
+        required
+      />
 
-        <input
-          type="text"
-          placeholder="Location (e.g. Kannur)"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          required
-        />
+      <input
+        type="text"
+        placeholder="Location (e.g. Kannur)"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        required
+      />
 
-        <br /><br />
+      <input
+        type="text"
+        placeholder="Crop Name (e.g. Paddy)"
+        value={cropName}
+        onChange={(e) => setCropName(e.target.value)}
+        required
+      />
 
-        <input
-          type="text"
-          placeholder="Crop Name (e.g. Paddy)"
-          value={cropName}
-          onChange={(e) => setCropName(e.target.value)}
-          required
-        />
+      <input
+        type="number"
+        placeholder="Area in Acres"
+        value={areaInAcres}
+        onChange={(e) => setAreaInAcres(e.target.value)}
+        required
+      />
 
-        <br /><br />
+      <input
+        type="text"
+        placeholder="Season (Monsoon / Summer)"
+        value={season}
+        onChange={(e) => setSeason(e.target.value)}
+        required
+      />
 
-        <input
-          type="number"
-          placeholder="Area in Acres"
-          value={areaInAcres}
-          onChange={(e) => setAreaInAcres(e.target.value)}
-          required
-        />
+      <input
+        type="number"
+        placeholder="Yield Amount (kg)"
+        value={yieldAmount}
+        onChange={(e) => setYieldAmount(e.target.value)}
+      />
 
-        <br /><br />
+      <input
+        type="number"
+        placeholder="Profit (₹)"
+        value={profit}
+        onChange={(e) => setProfit(e.target.value)}
+      />
 
-        <input
-          type="text"
-          placeholder="Season (Monsoon / Summer)"
-          value={season}
-          onChange={(e) => setSeason(e.target.value)}
-          required
-        />
+      <button type="submit">Add Farm</button>
+    </form>
 
-        <br /><br />
+    {message && (
+      <p
+        className={`form-message ${
+          message.toLowerCase().includes("success")
+            ? "success"
+            : "error"
+        }`}
+      >
+        {message}
+      </p>
+    )}
+  </div>
+);
 
-        <input
-          type="number"
-          placeholder="Yield Amount (kg)"
-          value={yieldAmount}
-          onChange={(e) => setYieldAmount(e.target.value)}
-        />
-
-        <br /><br />
-
-        <input
-          type="number"
-          placeholder="Profit (₹)"
-          value={profit}
-          onChange={(e) => setProfit(e.target.value)}
-        />
-
-        <br /><br />
-
-        <button type="submit">Add Farm</button>
-      </form>
-
-      <p>{message}</p>
-    </div>
-  );
 }
 
 export default FarmForm;
