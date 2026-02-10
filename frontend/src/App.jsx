@@ -5,6 +5,8 @@ import FarmForm from "./pages/FarmForm";
 import FertilizerForm from "./pages/FertilizerForm";
 import FarmDetails from "./pages/FarmDetails";
 import ExpenseAnalytics from "./pages/ExpenseAnalytics";
+import FarmExpenseAnalytics from "./pages/FarmExpenseAnalytics";
+import AddExpense from "./pages/AddExpense";
 
 
 function AppRoutes() {
@@ -23,6 +25,9 @@ function AppRoutes() {
       <Route path="/add-farm" element={<FarmForm />} />
       <Route path="/add-fertilizer" element={<FertilizerForm />} />
       <Route path="/expenses" element={<ExpenseAnalytics />} />
+      <Route path="/farm/:farmId/expenses"element={<FarmExpenseAnalytics />}/>
+      <Route path="/farm/:farmId/add-expense" element={<AddExpense />}/>
+
 
       
     </Routes>

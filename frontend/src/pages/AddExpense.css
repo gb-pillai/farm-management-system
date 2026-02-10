@@ -1,0 +1,102 @@
+/* Page container */
+.add-expense-container {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #1f1f1f;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+}
+
+/* Title */
+.add-expense-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 26px;
+    font-weight: 600;
+}
+
+/* Form layout */
+.add-expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Inputs, select, textarea */
+.add-expense-form input,
+.add-expense-form select,
+.add-expense-form textarea {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #ffffff;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+/* Focus state */
+.add-expense-form input:focus,
+.add-expense-form select:focus,
+.add-expense-form textarea:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* Textarea */
+.add-expense-form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Submit button */
+.add-expense-form button {
+    margin-top: 10px;
+    padding: 12px;
+    background: linear-gradient(135deg, #4caf50, #43a047);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+/* Button hover */
+.add-expense-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+    opacity: 0.95;
+}
+
+/* Button active */
+.add-expense-form button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Small screens */
+@media (max-width: 600px) {
+    .add-expense-container {
+        margin: 20px;
+        padding: 20px;
+    }
+}
+
+/* Back button */
+.back-btn {
+    background: transparent;
+    border: none;
+    color: #4caf50;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 15px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}

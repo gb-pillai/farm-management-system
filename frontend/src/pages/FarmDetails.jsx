@@ -253,6 +253,18 @@ const applyRecommendation = async () => {
           {uiMessage}
         </div>
       )}
+      <h1>Expense</h1>
+      <button
+        onClick={() => navigate(`/farm/${farm._id}/expenses`)}
+      >
+        View Expenses
+      </button>
+
+
+      <button onClick={() => navigate(`/farm/${farm._id}/add-expense`)}>
+        ➕ Add Expense
+      </button>
+
 
 
 
