@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose"); // ✅ ADD THIS
 const Income = require("../models/Income");
 
-// ✅ ADD INCOME (MANUAL ENTRY AFTER SALE)
+// ✅ ADD INCOME
 router.post("/add", async (req, res) => {
   try {
     const income = new Income(req.body);
@@ -21,12 +22,13 @@ router.post("/add", async (req, res) => {
 // ✅ GET INCOME BY FARM
 router.get("/farm/:farmId", async (req, res) => {
   try {
-    const data = await Income.find({ farmId: req.params.farmId })
-      .sort({ soldDate: -1 });
+    const income = await Income.find({
+      farmId: new mongoose.Types.ObjectId(req.params.farmId),
+    });
 
-    res.json({ success: true, data });
-  } catch {
-    res.status(500).json({ success: false });
+    res.json(income);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

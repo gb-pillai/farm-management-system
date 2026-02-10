@@ -223,6 +223,10 @@ const applyRecommendation = async () => {
           ➕ Add Expense
         </button>
 
+        <button onClick={() => navigate(`/farm/${farm._id}/income`)}>
+          View Income
+        </button>
+
         <button
           className="add-income-btn"
           onClick={() => navigate(`/farm/${farmId}/income/add`)}

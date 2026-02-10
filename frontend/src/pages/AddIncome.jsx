@@ -28,26 +28,27 @@ const AddIncome = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const payload = {
-      ...form,
-      farmId,
-      userId: localStorage.getItem("userId"),
-    };
-
-    const res = await fetch("http://localhost:5000/api/income/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      navigate(`/farm/${farmId}/expenses`);
-    }
+  const payload = {
+    ...form,
+    farmId,
+    userId: localStorage.getItem("userId"),
   };
+
+  const res = await fetch("http://localhost:5000/api/income/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    navigate(`/farm/${farmId}/income`);
+  }
+};
+
 
   return (
     <div className="add-income-container">
