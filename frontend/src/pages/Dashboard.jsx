@@ -4,11 +4,7 @@ import FertilizerStatusChart from "../components/charts/FertilizerStatusChart";
 import ProfitPerFarmChart from "../components/charts/ProfitPerFarmChart";
 import FarmUsageChart from "../components/charts/FarmUsageChart";
 import ExpensePie from "../components/charts/ExpensePie";
-import React from "react";
 import "./Dashboard.css";
-
-
-
 
 
 function Dashboard() {
@@ -68,9 +64,6 @@ function Dashboard() {
           dueSoon,
         });
       });
-
-
-
       
   }, [navigate]);
 
