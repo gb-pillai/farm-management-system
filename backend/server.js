@@ -38,6 +38,10 @@ app.use("/api/analytics", require("./routes/analytics"));
 // Income routes
 app.use("/api/income", require("./routes/income"));
 
+
+app.use("/api/weather", require("./routes/weather"));
+
+
 // Test route
 app.get("/", (req, res) => {
   res.send("Backend running");
