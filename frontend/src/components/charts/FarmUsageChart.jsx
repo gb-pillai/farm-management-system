@@ -15,14 +15,32 @@ export default function FarmUsageChart({ data }) {
           {
             label: "Fertilizer Applications",
             data: data.map(d => d.count),
+            backgroundColor: "#4ade80",
+            borderRadius: 6,
           },
         ],
       }}
       options={{
         responsive: true,
         maintainAspectRatio: false,
-        }}
-
+        plugins: {
+          legend: {
+            labels: {
+              color: "#fff",
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#ccc" },
+            grid: { display: false },
+          },
+          y: {
+            ticks: { color: "#ccc" },
+            beginAtZero: true,
+          },
+        },
+      }}
     />
     </div>
   );

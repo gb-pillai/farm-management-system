@@ -17,8 +17,10 @@ function Dashboard() {
     dueSoon: 0,
   });
   const [expenseCategoryData, setExpenseCategoryData] = useState([]);
+  const [farmUsageData, setFarmUsageData] = useState([]);
 
   const navigate = useNavigate();
+
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -40,6 +42,8 @@ function Dashboard() {
         let dueSoon = 0;
         const today = new Date();
 
+        const usageArray = [];
+
         for (const farm of data.data) {
           const res = await fetch(
             `http://localhost:5000/api/fertilizer/farm/${farm._id}`
@@ -47,6 +51,12 @@ function Dashboard() {
           const fertilizers = await res.json();
 
           totalFertilizers += fertilizers.length;
+
+          // 🔥 This creates data for FarmUsageChart
+          usageArray.push({
+            farm: farm.farmName,
+            count: fertilizers.length,
+          });
 
           fertilizers.forEach((f) => {
             if (!f.nextDueDate) return;
@@ -57,6 +67,8 @@ function Dashboard() {
           });
         }
 
+        setFarmUsageData(usageArray);
+
         setSummary({
           totalFarms: data.data.length,
           totalFertilizers,
@@ -64,6 +76,7 @@ function Dashboard() {
           dueSoon,
         });
       });
+
       
   }, [navigate]);
 
@@ -159,7 +172,7 @@ useEffect(() => {
           <ExpensePie data={expenseCategoryData} />
           <p className="hint">Click to view detailed expenses</p>
         </div>
-        
+
         <div className="chart-card">
           <h3>Profit Per Farm</h3>
           <ProfitPerFarmChart data={profitData} />
@@ -167,12 +180,7 @@ useEffect(() => {
 
         <div className="chart-card">
           <h3>Fertilizer Usage</h3>
-          <FarmUsageChart
-            data={[
-              { farm: "Rice Field", count: 5 },
-              { farm: "Coconut Farm", count: 2 },
-            ]}
-          />
+          <FarmUsageChart data={farmUsageData} />
         </div>
       </div>
     </section>
