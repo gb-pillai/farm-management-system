@@ -98,7 +98,6 @@ useEffect(() => {
     .catch(err => console.error(err));
 }, []);
 
-
  return (
   <div className="dashboard-container">
     {/* HEADER */}
@@ -160,8 +159,11 @@ useEffect(() => {
           <ExpensePie data={expenseCategoryData} />
           <p className="hint">Click to view detailed expenses</p>
         </div>
-
-        <ProfitPerFarmChart data={profitData} />
+        
+        <div className="chart-card">
+          <h3>Profit Per Farm</h3>
+          <ProfitPerFarmChart data={profitData} />
+        </div>
 
         <div className="chart-card">
           <h3>Fertilizer Usage</h3>

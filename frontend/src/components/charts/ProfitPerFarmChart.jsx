@@ -12,7 +12,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 export default function ProfitPerFarmChart({ data }) {
   if (!data || !data.length) return <p>No profit data</p>;
 
-  const profits = data.map(d => d.profit);
+  const profits = data.map(d => Number(d.profit));
 
   return (
     <div style={{ height: "260px" }}>
@@ -24,7 +24,7 @@ export default function ProfitPerFarmChart({ data }) {
               label: "Profit (₹)",
               data: profits,
               backgroundColor: profits.map(p =>
-                p >= 0 ? "#22c55e" : "#ef4444" // green profit, red loss
+                p >= 0 ? "#22c55e" : "#ef4444"
               ),
             },
           ],
@@ -34,7 +34,7 @@ export default function ProfitPerFarmChart({ data }) {
           maintainAspectRatio: false,
           scales: {
             y: {
-              beginAtZero: true,
+              beginAtZero: false,
             },
           },
         }}

@@ -139,7 +139,7 @@ router.get("/dashboard/profit/:userId", async (req, res) => {
     for (const farm of farms) {
       const income = await Income.aggregate([
         { $match: { farmId: farm._id } },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
+        { $group: { _id: null, total: { $sum: "$totalAmount" } } }
       ]);
 
       const expense = await Expense.aggregate([
