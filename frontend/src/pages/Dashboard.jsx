@@ -4,7 +4,6 @@ import FertilizerStatusChart from "../components/charts/FertilizerStatusChart";
 import ProfitPerFarmChart from "../components/charts/ProfitPerFarmChart";
 import FarmUsageChart from "../components/charts/FarmUsageChart";
 import ExpensePie from "../components/charts/ExpensePie";
-import WeatherCard from "../components/charts/WeatherCard";
 import "./Dashboard.css";
 
 
@@ -113,6 +112,7 @@ useEffect(() => {
 }, []);
 
  return (
+  
   <div className="dashboard-container">
     {/* HEADER */}
     <div className="dashboard-header">

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+
 import "./FarmDetails.css"
 
 function FarmDetails() {
@@ -22,6 +24,23 @@ function FarmDetails() {
   const [farmerInterval, setFarmerInterval] = useState("");
   const [recommendation, setRecommendation] = useState(null);
   const [loadingRec, setLoadingRec] = useState(false);
+ //whether
+  const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
+  const [weather, setWeather] = useState(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      if (farm?.location) {
+        const response = await axios.get(
+          `https://api.openweathermap.org/data/2.5/weather?q=${farm.location},IN&units=metric&appid=${API_KEY}`
+        );
+
+        setWeather(response.data);
+      }
+    };
+
+    fetchWeather();
+  }, [farm, API_KEY]);
 
   useEffect(() => {
     // Fetch farm details
@@ -137,6 +156,31 @@ const applyRecommendation = async () => {
 
   return (
   <div className="farm-details-container">
+
+  {weather && (
+    <div className="weather-card">
+      <div className="weather-header">
+        <h3>🌤 Farm Weather</h3>
+        <span className="weather-condition">
+          {weather.weather[0].description}
+        </span>
+      </div>
+
+      <div className="weather-main">
+        <div className="temperature">
+          {Math.round(weather.main.temp)}°C
+        </div>
+
+        <div className="weather-details">
+          <p>💧 Humidity: {weather.main.humidity}%</p>
+          <p>🌡 Feels Like: {Math.round(weather.main.feels_like)}°C</p>
+        </div>
+      </div>
+    </div>
+  )}
+
+
+
     {/* FARM HEADER */}
     <div className="farm-header card">
       <h2>{farm.farmName}</h2>

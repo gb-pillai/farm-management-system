@@ -7,7 +7,7 @@ function WeatherCard() {
 
   useEffect(() => {
     const fetchWeather = async () => {
-      const data = await getWeatherByCity("Kannur");
+      const data = await getWeatherByCity("Iritty");
       setWeather(data);
     };
 
@@ -18,7 +18,7 @@ function WeatherCard() {
 
   return (
     <div className="weather-card">
-      <h3>🌦 Kannur Weather</h3>
+      <h3>🌦  Weather</h3>
       <p>🌡 Temp: {weather.main.temp}°C</p>
       <p>💧 Humidity: {weather.main.humidity}%</p>
       <p>🌥 Condition: {weather.weather[0].description}</p>

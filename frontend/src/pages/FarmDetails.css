@@ -195,3 +195,55 @@ button:hover {
         grid-template-columns: 1fr;
     }
 }
+
+
+.weather-card {
+    margin-top: 20px;
+    padding: 25px;
+    margin-bottom: 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.weather-card:hover {
+    transform: translateY(-5px);
+}
+
+.weather-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.weather-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.weather-condition {
+    text-transform: capitalize;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.weather-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.temperature {
+    font-size: 48px;
+    font-weight: bold;
+}
+
+.weather-details p {
+    margin: 6px 0;
+    font-size: 15px;
+    opacity: 0.9;
+}
