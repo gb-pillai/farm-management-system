@@ -26,18 +26,16 @@ export default function YieldAnalyticsPage() {
 
   const [form, setForm] = useState({
     cropType: "",
+    district: "",
+    season: "",
     area: "",
-    rainfall: "",
-    temperature: "",
-    humidity: "",
-    fertilizer: "",
+    year: "",
   });
 
   const [predictedYield, setPredictedYield] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔹 Fetch prediction history
   const fetchHistory = useCallback(async () => {
     try {
       const res = await axios.get(
@@ -45,23 +43,20 @@ export default function YieldAnalyticsPage() {
       );
       setHistory(res.data);
     } catch (err) {
-      console.error("Error fetching history:", err);
+      console.error(err);
     }
   }, [id]);
 
-  // 🔹 Load history when page loads
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
 
-  // 🔹 Handle input change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // 🔹 Handle prediction submit
   const handleSubmit = async () => {
-    if (!form.area || !form.rainfall || !form.temperature) {
+    if (!form.cropType || !form.area || !form.year) {
       alert("Please fill required fields");
       return;
     }
@@ -72,26 +67,24 @@ export default function YieldAnalyticsPage() {
       const res = await axios.post(
         "http://localhost:5000/api/yield/predict",
         {
-          ...form,
           farmId: id,
+          crop: form.cropType,
+          district: form.district.toUpperCase(),
+          season: form.season,
           area: Number(form.area),
-          rainfall: Number(form.rainfall),
-          temperature: Number(form.temperature),
-          humidity: Number(form.humidity),
-          fertilizer: Number(form.fertilizer),
+          year: Number(form.year),
         }
       );
 
       setPredictedYield(res.data.predictedYield);
-      fetchHistory(); // Refresh history after new prediction
+      fetchHistory();
     } catch (err) {
-      console.error("Prediction error:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Chart Data
   const chartData = {
     labels: history.map((item, index) => `Prediction ${index + 1}`),
     datasets: [
@@ -109,33 +102,40 @@ export default function YieldAnalyticsPage() {
     <div style={{ padding: "30px" }}>
       <h2>Yield Analytics</h2>
 
-      {/* FORM */}
       <div style={{ marginBottom: "20px" }}>
         <input name="cropType" placeholder="Crop Type" onChange={handleChange} />
         <input name="area" placeholder="Area (ha)" onChange={handleChange} />
-        <input name="rainfall" placeholder="Rainfall (mm)" onChange={handleChange} />
-        <input name="temperature" placeholder="Temperature (°C)" onChange={handleChange} />
-        <input name="humidity" placeholder="Humidity (%)" onChange={handleChange} />
-        <input name="fertilizer" placeholder="Fertilizer (kg)" onChange={handleChange} />
+        <input name="year" placeholder="Year (e.g. 2025)" onChange={handleChange} />
+
+        <select name="district" onChange={handleChange}>
+          <option value="">Select District</option>
+          <option value="KANNUR">KANNUR</option>
+          <option value="KOZHIKODE">KOZHIKODE</option>
+          <option value="MALAPPURAM">MALAPPURAM</option>
+        </select>
+
+        <select name="season" onChange={handleChange}>
+          <option value="">Select Season</option>
+          <option value="Kharif">Kharif</option>
+          <option value="Rabi">Rabi</option>
+          <option value="Summer">Summer</option>
+        </select>
 
         <button onClick={handleSubmit} disabled={loading}>
           {loading ? "Predicting..." : "Predict Yield"}
         </button>
       </div>
 
-      {/* RESULT */}
       {predictedYield !== null && (
         <h3>Latest Predicted Yield: {predictedYield} kg</h3>
       )}
 
-      {/* CHART */}
       {history.length > 0 && (
         <div style={{ width: "700px", marginTop: "30px" }}>
           <Line data={chartData} />
         </div>
       )}
 
-      {/* HISTORY TABLE */}
       {history.length > 0 && (
         <table border="1" style={{ marginTop: "30px", width: "500px" }}>
           <thead>

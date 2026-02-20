@@ -10,15 +10,25 @@ const yieldSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  district: {
+    type: String,
+    required: true,
+  },
+  season: {
+    type: String,
+    required: true,
+  },
   area: {
     type: Number,
     required: true,
   },
-  rainfall: Number,
-  temperature: Number,
-  humidity: Number,
-  fertilizer: Number,
-  predictedYield: Number,
+  year: {
+    type: Number,
+    required: true,
+  },
+  predictedYield: {
+    type: Number,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model("YieldPrediction", yieldSchema);
