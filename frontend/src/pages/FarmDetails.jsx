@@ -254,6 +254,10 @@ const applyRecommendation = async () => {
       </div>
     )}
 
+    <button onClick={() => navigate(`/farm/${farm._id}/yield`)}>
+      Predict Yield
+    </button>
+
     {/* EXPENSE SECTION */}
     <div className="card">
       <h3>💰 Expense</h3>

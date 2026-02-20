@@ -9,6 +9,7 @@ import FarmExpenseAnalytics from "./pages/FarmExpenseAnalytics";
 import AddExpense from "./pages/AddExpense";
 import AddIncome from "./pages/AddIncome";
 import FarmIncome from "./pages/FarmIncome";
+import YieldAnalyticsPage from "./pages/YieldAnalyticsPage";
 
 import './App.css'
 
@@ -33,7 +34,7 @@ function AppRoutes() {
       <Route path="/expenses/edit/:id" element={<AddExpense />} />
       <Route path="/farm/:farmId/income/add" element={<AddIncome />} />
       <Route path="/farm/:farmId/income" element={<FarmIncome />} />
-
+      <Route path="/farm/:id/yield" element={<YieldAnalyticsPage />} />
 
 
       
