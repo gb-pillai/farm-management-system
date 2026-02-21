@@ -104,5 +104,20 @@ router.get("/details/:farmId", async (req, res) => {
   }
 });
 
+// GET single farm
+router.get("/:id", async (req, res) => {
+  try {
+    const farm = await Farm.findById(req.params.id);
+
+    if (!farm) {
+      return res.status(404).json({ error: "Farm not found" });
+    }
+
+    res.json(farm);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 module.exports = router;

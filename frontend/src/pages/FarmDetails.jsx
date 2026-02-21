@@ -155,8 +155,11 @@ const applyRecommendation = async () => {
   if (!farm) return <p>Loading farm details...</p>;
 
   return (
-  <div className="farm-details-container">
 
+  <div className="farm-details-container">
+    <button className="back-btn" onClick={() => navigate("/dashboard")}>
+      ⬅ Back to Dashboard
+    </button>
   {weather && (
     <div className="weather-card">
       <div className="weather-header">
@@ -253,10 +256,7 @@ const applyRecommendation = async () => {
         {uiMessage}
       </div>
     )}
-
-    <button onClick={() => navigate(`/farm/${farm._id}/yield`)}>
-      Predict Yield
-    </button>
+    
 
     {/* EXPENSE SECTION */}
     <div className="card">
@@ -357,10 +357,17 @@ const applyRecommendation = async () => {
   )}
 </div>
 
-
-    <button className="back-btn" onClick={() => navigate("/dashboard")}>
-      ⬅ Back to Dashboard
+  <button
+      className="predict-btn"
+      onClick={() => navigate(`/farm/${farm._id}/yield`)}
+    >
+      <span className="btn-icon">📈</span>
+      <span>Predict Yield</span>
     </button>
+
+
+
+    
   </div>
 );
 }
