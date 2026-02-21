@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Line } from "react-chartjs-2";
 import "./YieldAnalyticsPage.css";
@@ -25,6 +25,7 @@ ChartJS.register(
 
 export default function YieldAnalyticsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [farm, setFarm] = useState({
     cropType: "",
@@ -37,6 +38,7 @@ export default function YieldAnalyticsPage() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [farmLoading, setFarmLoading] = useState(true);
+  
 
   // ✅ Load Farm + History
   useEffect(() => {
@@ -160,8 +162,11 @@ export default function YieldAnalyticsPage() {
 
   return (
   <div className="yield-container">
+    
     <div className="content-wrapper">
-
+      <button className="back-btn" onClick={() => navigate(`/farm/${id}`)}>
+        ⬅ Back to Farms
+      </button>
       <h2 className="yield-title">Yield Analytics</h2>
 
       {farmLoading && <p>Loading farm details...</p>}
