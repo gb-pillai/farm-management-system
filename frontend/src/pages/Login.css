@@ -1,54 +1,89 @@
-.login_page{
+/* Full Page */
+.login_page {
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: green;
-    min-height: 100vh;
-    min-width: 100vw;
+    background: linear-gradient(135deg, #1e7c35, #3dbb5d);
+    font-family: "Segoe UI", sans-serif;
 }
+
+/* Card */
 .login-container {
-    max-width: 350px;
-    margin: 60px;
-    padding: 25px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background-color: white;
-}
-
-.login-container h2 {
-    margin-bottom: 20px;
-    color: green;
-}
-
-.login-container input {
-    min-width: 330px;
-    padding: 8px;
-    margin-bottom: 12px;
-    border-radius: 4px;
-    border: 1px solid #40c756;
-    background-color: white;
-    color: black;
-}
-placeholder{
-    color: black;
-}
-
-.login-container button {
-    min-width: 350px;
-    padding: 10px;
-    background-color: #4caf50;
-    border: none;
+    width: 360px;
+    padding: 40px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
     color: white;
+}
+
+/* Title */
+.login-container h2 {
+    margin-bottom: 5px;
+    font-size: 24px;
+}
+
+.subtitle {
+    font-size: 14px;
+    margin-bottom: 25px;
+    opacity: 0.9;
+}
+
+/* Input */
+.input-group {
+    margin-bottom: 18px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+}
+
+/* Button */
+.login-container button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: white;
+    color: #1e7c35;
     font-weight: bold;
-    border-radius: 4px;
     cursor: pointer;
+    transition: 0.3s ease;
 }
 
 .login-container button:hover {
-    background-color: #43a047;
+    background: #d4f5dc;
+    transform: translateY(-2px);
 }
 
+.login-container button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Message */
 .login-message {
     margin-top: 15px;
-    color: #4caf50;
+    font-size: 13px;
+    min-height: 20px;
+}
+
+/* Switch */
+.switch-text {
+    margin-top: 15px;
+    font-size: 13px;
+}
+
+.switch-text a {
+    color: white;
+    font-weight: bold;
+    text-decoration: underline;
 }

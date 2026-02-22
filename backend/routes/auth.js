@@ -1,12 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 
 /*
-  Phase-2 Authentication
-  ----------------------
+  Phase-2 Authentication (Improved Secure Version)
+  ------------------------------------------------
   - Signup (register farmer)
   - Login using MongoDB
+  - Password hashing
   - No tokens (simple phase)
 */
 
@@ -31,10 +33,13 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    // 🔐 HASH PASSWORD
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Create new user
     const newUser = new User({
       username,
-      password
+      password: hashedPassword
     });
 
     await newUser.save();
@@ -43,6 +48,7 @@ router.post("/register", async (req, res) => {
       success: true,
       message: "User registered successfully"
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -51,6 +57,7 @@ router.post("/register", async (req, res) => {
     });
   }
 });
+
 
 /* -------------------- LOGIN -------------------- */
 router.post("/login", async (req, res) => {
@@ -64,10 +71,19 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Find user in database
     const user = await User.findOne({ username });
 
-    if (!user || user.password !== password) {
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid username or password"
+      });
+    }
+
+    // 🔐 Compare hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: "Invalid username or password"
@@ -79,6 +95,7 @@ router.post("/login", async (req, res) => {
       message: "Login successful",
       userId: user._id
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,

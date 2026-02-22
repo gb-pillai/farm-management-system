@@ -99,38 +99,86 @@
 }
 
 /* FARMS */
+/* ================= FARMS SECTION ================= */
+
 .farms-section {
-    margin-top: 40px;
+    margin-top: 50px;
 }
 
+/* GRID */
 .farm-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
 }
 
+/* CARD */
 .farm-card {
-    background: #fff;
-    color: #000;
-    padding: 18px;
-    border-radius: 14px;
+    background: linear-gradient(145deg, #111827, #0f172a);
+    border: 1px solid #1f2937;
+    padding: 22px;
+    border-radius: 16px;
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
+/* Subtle Glow Effect */
+.farm-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(135deg, #16a34a, transparent);
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+/* Hover Effect */
 .farm-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+    border-color: #16a34a;
 }
 
+/* FARM TITLE */
+.farm-card h4 {
+    font-size: 18px;
+    margin-bottom: 6px;
+    color: #ffffff;
+}
+
+/* CROP NAME */
 .farm-card p {
-    color: #555;
+    font-size: 14px;
+    color: #9ca3af;
+    margin-bottom: 14px;
 }
 
+/* VIEW LINK */
 .view-link {
-    display: inline-block;
-    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
     font-size: 13px;
-    color: #16a34a;
+    font-weight: 600;
+    color: #22c55e;
+    transition: 0.2s ease;
+}
+
+.view-link:hover {
+    letter-spacing: 0.5px;
+}
+
+/* EMPTY STATE */
+.no-data {
+    margin-top: 20px;
+    color: #9ca3af;
+    font-size: 14px;
 }
 
 /* BUTTON */

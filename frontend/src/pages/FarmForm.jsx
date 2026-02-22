@@ -12,7 +12,7 @@ function FarmForm() {
   const [profit, setProfit] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -77,13 +77,27 @@ function FarmForm() {
         required
       />
 
-      <input
-        type="text"
-        placeholder="Location (e.g. Kannur)"
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        required
-      />
+      <select
+  value={location}
+  onChange={(e) => setLocation(e.target.value)}
+  required
+>
+  <option value="">Select District</option>
+  <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+  <option value="Kollam">Kollam</option>
+  <option value="Pathanamthitta">Pathanamthitta</option>
+  <option value="Alappuzha">Alappuzha</option>
+  <option value="Kottayam">Kottayam</option>
+  <option value="Idukki">Idukki</option>
+  <option value="Ernakulam">Ernakulam</option>
+  <option value="Thrissur">Thrissur</option>
+  <option value="Palakkad">Palakkad</option>
+  <option value="Malappuram">Malappuram</option>
+  <option value="Kozhikode">Kozhikode</option>
+  <option value="Wayanad">Wayanad</option>
+  <option value="Kannur">Kannur</option>
+  <option value="Kasaragod">Kasaragod</option>
+</select>
 
       <input
         type="text"

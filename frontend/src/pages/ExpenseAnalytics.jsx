@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./ExpenseAnalytics.css";
 
 const ExpenseAnalytics = () => {
   const [expenses, setExpenses] = useState([]);
@@ -26,28 +27,28 @@ const ExpenseAnalytics = () => {
   );
 
   return (
-    <div style={{ padding: "20px" }}>
-        <button onClick={() => navigate("/dashboard")}>
-        ⬅ Back to Dashboard
-      </button>
-      <h1>💸 Expense Analytics</h1>
+  <div className="expense-container">
+    <button
+      className="back-btn"
+      onClick={() => navigate("/dashboard")}
+    >
+      ← Back to Dashboard
+    </button>
 
-      <h3 style={{ marginTop: "10px" }}>
+    <div className="expense-header">
+      <h1>💸 Expense Analytics</h1>
+      <h3 className="total-expense">
         Total Expense: ₹ {totalExpense}
       </h3>
+    </div>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : expenses.length === 0 ? (
-        <p>No expenses recorded yet</p>
-      ) : (
-        <table
-          style={{
-            marginTop: "20px",
-            width: "100%",
-            borderCollapse: "collapse",
-          }}
-        >
+    {loading ? (
+      <p className="status-text">Loading...</p>
+    ) : expenses.length === 0 ? (
+      <p className="status-text">No expenses recorded yet</p>
+    ) : (
+      <div className="table-wrapper">
+        <table className="expense-table">
           <thead>
             <tr>
               <th>Date</th>
@@ -66,14 +67,15 @@ const ExpenseAnalytics = () => {
                 <td>{exp.title}</td>
                 <td>{exp.category}</td>
                 <td>{exp.farmId?.farmName || "N/A"}</td>
-                <td>{exp.amount}</td>
+                <td className="amount-cell">₹ {exp.amount}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 };
 
 export default ExpenseAnalytics;

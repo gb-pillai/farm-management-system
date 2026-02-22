@@ -117,6 +117,7 @@ button:hover {
 /* BACK BUTTON */
 .back-btn {
     margin-top: 20px;
+    margin-bottom: 20px;
     background: transparent;
     border: 1px solid #444;
     color: #fff;
@@ -201,6 +202,7 @@ button:hover {
     margin-top: 20px;
     padding: 25px;
     margin-bottom: 18px;
+    margin-top: 18px;
     border-radius: 18px;
     background: linear-gradient(135deg, #1e3c72, #2a5298);
     color: #fff;

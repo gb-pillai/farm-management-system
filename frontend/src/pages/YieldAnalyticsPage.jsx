@@ -187,13 +187,29 @@ export default function YieldAnalyticsPage() {
 
           <div>
             <label>District</label>
-            <input
-              type="text"
+            <select
               value={farm.district}
               onChange={(e) =>
                 setFarm({ ...farm, district: e.target.value })
               }
-            />
+              required
+            >
+              <option value="">Select District</option>
+              <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+              <option value="Kollam">Kollam</option>
+              <option value="Pathanamthitta">Pathanamthitta</option>
+              <option value="Alappuzha">Alappuzha</option>
+              <option value="Kottayam">Kottayam</option>
+              <option value="Idukki">Idukki</option>
+              <option value="Ernakulam">Ernakulam</option>
+              <option value="Thrissur">Thrissur</option>
+              <option value="Palakkad">Palakkad</option>
+              <option value="Malappuram">Malappuram</option>
+              <option value="Kozhikode">Kozhikode</option>
+              <option value="Wayanad">Wayanad</option>
+              <option value="Kannur">Kannur</option>
+              <option value="Kasaragod">Kasaragod</option>
+            </select>
           </div>
 
           <div>

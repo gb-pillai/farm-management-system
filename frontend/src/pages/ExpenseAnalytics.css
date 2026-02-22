@@ -1,0 +1,115 @@
+/* PAGE CONTAINER */
+.expense-container {
+    padding: 40px;
+    min-height: 100vh;
+    background: #0b0f14;
+    color: #ffffff;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* BACK BUTTON */
+.back-btn {
+    background: #22c55e;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #16a34a;
+    transform: translateY(-2px);
+}
+
+/* HEADER */
+.expense-header {
+    margin-top: 25px;
+    margin-bottom: 30px;
+}
+
+.expense-header h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.total-expense {
+    font-size: 20px;
+    color: #22c55e;
+    font-weight: 600;
+}
+
+/* STATUS TEXT */
+.status-text {
+    margin-top: 30px;
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+/* TABLE WRAPPER */
+.table-wrapper {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+/* TABLE */
+.expense-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #111827;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* TABLE HEADER */
+.expense-table thead {
+    background: #1f2937;
+}
+
+.expense-table th {
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* TABLE BODY */
+.expense-table td {
+    padding: 14px 16px;
+    border-top: 1px solid #1f2937;
+    font-size: 14px;
+}
+
+/* ROW HOVER EFFECT */
+.expense-table tbody tr:hover {
+    background: #1f2937;
+    transition: 0.2s ease;
+}
+
+/* AMOUNT COLUMN */
+.amount-cell {
+    font-weight: 600;
+    color: #22c55e;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .expense-header h1 {
+        font-size: 26px;
+    }
+
+    .expense-container {
+        padding: 20px;
+    }
+
+    .expense-table th,
+    .expense-table td {
+        padding: 10px;
+        font-size: 12px;
+    }
+}

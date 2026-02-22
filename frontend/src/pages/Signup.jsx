@@ -1,20 +1,21 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import "./Login.css";
+import "./Login.css"; // reuse same styling
 
-function Login({ onLoginSuccess }) {
+function Signup() {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
 
-    if (!username || !password) {
-      setMessage("Please enter username and password");
+    if (!username || !email || !password) {
+      setMessage("Please fill all fields");
       return;
     }
 
@@ -23,27 +24,23 @@ function Login({ onLoginSuccess }) {
       setMessage("");
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+        "http://localhost:5000/api/auth/register",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify({ username, email, password }),
         }
       );
 
       const data = await response.json();
 
       if (data.success) {
-        localStorage.setItem("userId", data.userId);
-        setMessage("Login successful ✅");
-
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        }
-
-        navigate("/dashboard");
+        setMessage("Account created successfully ✅");
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
       } else {
-        setMessage(data.message || "Invalid credentials");
+        setMessage(data.message || "Signup failed");
       }
     } catch  {
       setMessage("Server error. Please try again.");
@@ -56,15 +53,24 @@ function Login({ onLoginSuccess }) {
     <div className="login_page">
       <div className="login-container">
         <h2>🌾 Farm Management</h2>
-        <p className="subtitle">Login to continue</p>
+        <p className="subtitle">Create your account</p>
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignup}>
           <div className="input-group">
             <input
               type="text"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
@@ -78,18 +84,18 @@ function Login({ onLoginSuccess }) {
           </div>
 
           <button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
 
         <p className="login-message">{message}</p>
 
         <p className="switch-text">
-          Don’t have an account? <Link to="/signup">Sign Up</Link>
+          Already have an account? <Link to="/">Login</Link>
         </p>
       </div>
     </div>
   );
 }
 
-export default Login;
+export default Signup;
