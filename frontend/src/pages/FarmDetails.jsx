@@ -249,13 +249,6 @@ const applyRecommendation = async () => {
         ➕ Add Fertilizer
       </button>
     </div>
-
-    {/* UI MESSAGE */}
-    {uiMessage && (
-      <div className={`alert ${uiType}`}>
-        {uiMessage}
-      </div>
-    )}
     
 
     {/* EXPENSE SECTION */}
@@ -356,6 +349,12 @@ const applyRecommendation = async () => {
     </div>
   )}
 </div>
+{/* UI MESSAGE */}
+    {uiMessage && (
+      <div className={`alert ${uiType}`}>
+        {uiMessage}
+      </div>
+    )}
 
   <button
       className="predict-btn"
