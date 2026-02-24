@@ -113,7 +113,7 @@ router.get("/status", async (req, res) => {
     if (!f.nextDueDate) return;
 
     const diff = new Date(f.nextDueDate) - today;
-
+    
     if (diff < 0) overdue++;
     else if (diff <= 3 * 24 * 60 * 60 * 1000) dueSoon++;
     else normal++;
