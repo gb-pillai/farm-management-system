@@ -25,6 +25,9 @@ function FarmDetails() {
   const [recommendation, setRecommendation] = useState(null);
   const [loadingRec, setLoadingRec] = useState(false);
 
+  // 🔹 Multiple Crops Selection
+  const [selectedCrop, setSelectedCrop] = useState("");
+
   // Weather
   const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
   const [weather, setWeather] = useState(null);
@@ -49,6 +52,13 @@ function FarmDetails() {
       .then((data) => {
         if (data.success) {
           setFarm(data.data);
+          // Set initial active crop
+          if (data.data.crops && data.data.crops.length > 0) {
+            const firstCrop = data.data.crops[0];
+            setSelectedCrop(firstCrop.name || firstCrop);
+          } else if (data.data.cropName) {
+            setSelectedCrop(data.data.cropName);
+          }
         }
       });
 
@@ -61,7 +71,7 @@ function FarmDetails() {
 
   // ================= LOAD STAGES DYNAMICALLY =================
   useEffect(() => {
-    if (!farm?.cropName) return;
+    if (!selectedCrop) return;
 
     fetch("http://localhost:5000/api/recommendation/stages", {
       method: "POST",
@@ -69,7 +79,7 @@ function FarmDetails() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        crop: farm.cropName.toLowerCase(),
+        crop: selectedCrop.toLowerCase(),
       }),
     })
       .then((res) => res.json())
@@ -79,7 +89,7 @@ function FarmDetails() {
           setStage(""); // reset stage when crop loads
         }
       });
-  }, [farm?.cropName]); // ✅ fixed cascading render warning
+  }, [selectedCrop]); // ✅ Depends on selectedCrop now
 
   // ================= CALCULATE =================
   const calculateRecommendation = async () => {
@@ -99,7 +109,7 @@ function FarmDetails() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            crop: farm.cropName.toLowerCase(),
+            crop: selectedCrop.toLowerCase(),
             stage,
             fertilizer: fertilizerName.toLowerCase(),
             lastDate,
@@ -133,10 +143,10 @@ function FarmDetails() {
             farmId: farm._id,
             fertilizerName,
             appliedDate: lastDate,
-            intervalDays: recommendation.usedInterval, 
+            intervalDays: recommendation.usedInterval,
             quantity: 1,
             unit: "kg",
-            cropName: farm.cropName,
+            cropName: selectedCrop,
             notes: recommendation.message,
           }),
         }
@@ -202,9 +212,25 @@ function FarmDetails() {
         <h2>{farm.farmName}</h2>
         <div className="farm-meta">
           <p><strong>Location:</strong> {farm.location}</p>
-          <p><strong>Crop:</strong> {farm.cropName}</p>
           <p><strong>Area:</strong> {farm.areaInAcres} acres</p>
-          <p><strong>Season:</strong> {farm.season}</p>
+          <p><strong>Primary Season:</strong> {farm.season}</p>
+        </div>
+
+        <h4 style={{ marginTop: "15px", marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px" }}>Active Crops</h4>
+        <div style={{ display: "grid", gap: "10px" }}>
+          {farm.crops && farm.crops.length > 0 ? farm.crops.map((crop, idx) => (
+            <div key={idx} style={{ padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "5px", borderLeft: "4px solid #4CAF50", color: "#333" }}>
+              <strong style={{ color: "#222" }}>{crop.name || crop}</strong>
+              {crop.season && <span style={{ marginLeft: "10px", fontSize: "0.85rem", color: "#666" }}>({crop.season})</span>}
+              <div style={{ marginTop: "5px", fontSize: "0.9rem", display: "flex", justifyContent: "space-between", color: "#444" }}>
+                <span style={{ color: "#444" }}>🌱 Sown: {crop.sownDate ? new Date(crop.sownDate).toLocaleDateString() : 'N/A'}</span>
+                <span style={{ color: "#444" }}>🌾 Harvest: {crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate).toLocaleDateString() : 'N/A'}</span>
+                <span style={{ fontWeight: "bold", color: crop.status === "Harvested" ? "#ff9800" : "#4CAF50" }}>
+                  Status: {crop.status || "Growing"}
+                </span>
+              </div>
+            </div>
+          )) : <p>{farm.cropName}</p>}
         </div>
       </div>
 
@@ -292,6 +318,17 @@ function FarmDetails() {
         <h3 className="section-title">📊 Fertilizer Recommendation</h3>
 
         <div className="rec-form">
+          <select value={selectedCrop} onChange={(e) => setSelectedCrop(e.target.value)}>
+            {farm.crops && farm.crops.length > 0 ? (
+              farm.crops.map((c, idx) => {
+                const cropName = c.name || c;
+                return <option key={idx} value={cropName}>{cropName}</option>;
+              })
+            ) : (
+              <option value={farm.cropName}>{farm.cropName}</option>
+            )}
+          </select>
+
           <input
             type="text"
             value={fertilizerName}

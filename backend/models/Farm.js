@@ -28,11 +28,20 @@ const FarmSchema = new mongoose.Schema(
       min: 0
     },
 
-    // Crop details (Kerala focused)
-    cropName: {
-      type: String,
-      required: true
-    },
+    // Detailed Crop Lifecycle
+    crops: [
+      {
+        name: { type: String, required: true },
+        season: { type: String, required: true },
+        sownDate: { type: Date },
+        expectedHarvestDate: { type: Date },
+        status: {
+          type: String,
+          enum: ["Growing", "Harvested", "Planned"],
+          default: "Growing"
+        }
+      }
+    ],
 
     // Simple seasons for Kerala farmers
     season: {

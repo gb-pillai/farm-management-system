@@ -17,16 +17,32 @@ router.post("/", async (req, res) => {
       farmName,
       location,
       areaInAcres,
-      cropName,
+      cropName, // legacy frontend
+      crops,    // new frontend
       season,
       yieldAmount,
       profit
     } = req.body;
 
-    if (!userId || !farmName || !location || !areaInAcres || !cropName || !season) {
+    // Convert legacy cropName to crops array if crops isn't provided
+    let finalCrops = crops || (cropName ? [cropName] : []);
+
+    // Ensure backwards compatibility by converting strings to objects
+    finalCrops = finalCrops.map(crop => {
+      if (typeof crop === "string") {
+        return {
+          name: crop,
+          season: season || "Unknown",
+          status: "Growing"
+        };
+      }
+      return crop;
+    });
+
+    if (!userId || !farmName || !location || !areaInAcres || finalCrops.length === 0 || !season) {
       return res.status(400).json({
         success: false,
-        message: "Required farm details are missing"
+        message: `Required farm details missing. Provided: userId=${!!userId}, farmName=${!!farmName}, location=${!!location}, areaInAcres=${!!areaInAcres}, cropsLength=${finalCrops.length}, season=${!!season}`
       });
     }
 
@@ -35,7 +51,7 @@ router.post("/", async (req, res) => {
       farmName,
       location,
       areaInAcres,
-      cropName,
+      crops: finalCrops,
       season,
       yieldAmount,
       profit
