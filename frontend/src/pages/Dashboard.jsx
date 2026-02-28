@@ -117,11 +117,13 @@ function Dashboard() {
       .catch((err) => console.error(err));
   }, []);
 
+  const username = localStorage.getItem("username") || "Farmer";
+
   return (
     <div className="dashboard-container">
       {/* HEADER */}
       <div className="dashboard-header">
-        <h1>🌾 Farm Dashboard</h1>
+        <h1>🌾 {username}'s Dashboard</h1>
         <p className="subtitle">
           Overview of your farms, expenses & fertilizers
         </p>
