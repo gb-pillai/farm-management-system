@@ -204,14 +204,48 @@ function Dashboard() {
         ) : (
           <div className="farm-grid">
             {farms.map((farm) => (
-              <div
-                key={farm._id}
-                className="farm-card"
-                onClick={() => navigate(`/farm/${farm._id}`)}
-              >
-                <h4>{farm.farmName}</h4>
-                <p>{farm.crops && farm.crops.length > 0 ? farm.crops.map(c => c.name || c).join(", ") : farm.cropName}</p>
-                <span className="view-link">View →</span>
+              <div key={farm._id} style={{ position: "relative" }}>
+                {/* Clickable farm card */}
+                <div
+                  className="farm-card"
+                  onClick={() => navigate(`/farm/${farm._id}`)}
+                >
+                  <h4>{farm.farmName}</h4>
+                  <p>{farm.crops && farm.crops.length > 0 ? farm.crops.map(c => c.name || c).join(", ") : farm.cropName}</p>
+                  <span className="view-link">View →</span>
+                </div>
+
+                {/* Delete button placed outside clickable card to avoid event conflicts */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Delete farm "${farm.farmName}"? This cannot be undone.`)) {
+                      fetch(`http://localhost:5000/api/farm/${farm._id}`, { method: "DELETE" })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) setFarms(prev => prev.filter(f => f._id !== farm._id));
+                          else alert("Failed to delete farm");
+                        })
+                        .catch(() => alert("Server error while deleting"));
+                    }
+                  }}
+                  style={{
+                    position: "absolute",
+                    bottom: "14px",
+                    right: "14px",
+                    padding: "4px 12px",
+                    backgroundColor: "#e53935",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    fontSize: "0.78rem",
+                    fontWeight: "600",
+                    zIndex: 10
+                  }}
+                >
+                  🗑️ Delete
+                </button>
               </div>
             ))}
           </div>

@@ -4,6 +4,24 @@ import axios from "axios";
 
 import "./FarmDetails.css";
 
+// =========================================================
+// Auto-detect crop status based on today's date vs dates
+// =========================================================
+function getEffectiveStatus(crop) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const sown = crop.sownDate ? new Date(crop.sownDate) : null;
+  const harvest = crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate) : null;
+
+  if (harvest && today > harvest) return { status: "Harvested", auto: true };
+  if (sown && today < sown) return { status: "Planned", auto: true };
+  if (sown && harvest && today >= sown && today <= harvest) return { status: "Growing", auto: true };
+
+  // Fall back to manually set status
+  return { status: crop.status || "Growing", auto: false };
+}
+
 function FarmDetails() {
   const [uiMessage, setUiMessage] = useState("");
   const [uiType, setUiType] = useState("");
@@ -27,6 +45,10 @@ function FarmDetails() {
 
   // 🔹 Multiple Crops Selection
   const [selectedCrop, setSelectedCrop] = useState("");
+
+  // 🔹 Inline Crop Edit State
+  const [editingCropId, setEditingCropId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   // Weather
   const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
@@ -209,7 +231,15 @@ function FarmDetails() {
 
       {/* FARM HEADER */}
       <div className="farm-header card">
-        <h2>{farm.farmName}</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2>{farm.farmName}</h2>
+          <button
+            onClick={() => navigate(`/farm/${farm._id}/edit`)}
+            style={{ padding: "6px 14px", backgroundColor: "#1976d2", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}
+          >
+            ✏️ Edit Farm
+          </button>
+        </div>
         <div className="farm-meta">
           <p><strong>Location:</strong> {farm.location}</p>
           <p><strong>Area:</strong> {farm.areaInAcres} acres</p>
@@ -217,18 +247,117 @@ function FarmDetails() {
         </div>
 
         <h4 style={{ marginTop: "15px", marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px" }}>Active Crops</h4>
-        <div style={{ display: "grid", gap: "10px" }}>
-          {farm.crops && farm.crops.length > 0 ? farm.crops.map((crop, idx) => (
-            <div key={idx} style={{ padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "5px", borderLeft: "4px solid #4CAF50", color: "#333" }}>
-              <strong style={{ color: "#222" }}>{crop.name || crop}</strong>
-              {crop.season && <span style={{ marginLeft: "10px", fontSize: "0.85rem", color: "#666" }}>({crop.season})</span>}
-              <div style={{ marginTop: "5px", fontSize: "0.9rem", display: "flex", justifyContent: "space-between", color: "#444" }}>
-                <span style={{ color: "#444" }}>🌱 Sown: {crop.sownDate ? new Date(crop.sownDate).toLocaleDateString() : 'N/A'}</span>
-                <span style={{ color: "#444" }}>🌾 Harvest: {crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate).toLocaleDateString() : 'N/A'}</span>
-                <span style={{ fontWeight: "bold", color: crop.status === "Harvested" ? "#ff9800" : "#4CAF50" }}>
-                  Status: {crop.status || "Growing"}
+
+        {/* ====== LAND USAGE BAR ====== */}
+        {(() => {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const usedArea = (farm.crops || []).reduce((sum, c) => {
+            if (!c.allocatedArea) return sum;
+            const sown = c.sownDate ? new Date(c.sownDate) : null;
+            const harvest = c.expectedHarvestDate ? new Date(c.expectedHarvestDate) : null;
+
+            // Only count as "currently using land" if today is within the crop's active period
+            if (sown && harvest) {
+              const isActive = today >= sown && today <= harvest;
+              return isActive ? sum + c.allocatedArea : sum;
+            }
+            // If dates missing, count it (safe fallback)
+            return sum + c.allocatedArea;
+          }, 0);
+          const total = farm.areaInAcres || 0;
+          const available = Math.max(0, total - usedArea);
+          const usedCapped = Math.min(usedArea, total); // don't show more than 100%
+          const usedPct = total > 0 ? Math.min(100, (usedCapped / total) * 100) : 0;
+          const barColor = usedPct >= 90 ? "#e53935" : usedPct >= 70 ? "#ff9800" : "#4CAF50";
+          return (
+            <div style={{ marginBottom: "15px", padding: "12px", backgroundColor: "#f0f4f0", borderRadius: "8px", color: "#333" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "0.9rem" }}>
+                <span><strong>🗺️ Land Usage (Today)</strong></span>
+                <span style={{ color: available === 0 ? "#e53935" : "#333" }}>
+                  <strong style={{ color: "#4CAF50" }}>{usedArea.toFixed(2)} used</strong> / {total} acres &nbsp;|&nbsp;
+                  <strong style={{ color: available === 0 ? "#e53935" : "#1976d2" }}>{available.toFixed(2)} available</strong>
                 </span>
               </div>
+              <div style={{ height: "10px", backgroundColor: "#ddd", borderRadius: "5px", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${usedPct}%`, backgroundColor: barColor, borderRadius: "5px", transition: "width 0.5s ease" }} />
+              </div>
+              {available === 0 && <p style={{ color: "#e53935", fontSize: "0.82rem", marginTop: "6px" }}>⚠️ No land available right now — harvest a crop first or add a crop for a future period.</p>}
+            </div>
+          );
+        })()}
+
+        <div style={{ display: "grid", gap: "10px" }}>
+          {farm.crops && farm.crops.length > 0 ? farm.crops.map((crop, idx) => (
+            <div key={crop._id || idx} style={{ padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "5px", borderLeft: "4px solid #4CAF50", color: "#333" }}>
+
+              {editingCropId === (crop._id || idx) ? (
+                // ===== INLINE EDIT FORM =====
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} placeholder="Crop name" style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }} />
+                  <select value={editForm.season} onChange={e => setEditForm({ ...editForm, season: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }}>
+                    <option value="Monsoon">Monsoon</option>
+                    <option value="Post-Monsoon">Post-Monsoon</option>
+                    <option value="Summer">Summer</option>
+                    <option value="Winter">Winter</option>
+                    <option value="Perennial">Perennial (All-Year)</option>
+                  </select>
+                  <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Sown Date</label>
+                  <input type="date" value={editForm.sownDate ? editForm.sownDate.substring(0, 10) : ""} onChange={e => setEditForm({ ...editForm, sownDate: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }} />
+                  <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Expected Harvest</label>
+                  <input type="date" value={editForm.expectedHarvestDate ? editForm.expectedHarvestDate.substring(0, 10) : ""} onChange={e => setEditForm({ ...editForm, expectedHarvestDate: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }} />
+                  <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Allocated Area (acres)</label>
+                  <input type="number" min="0" step="0.1" value={editForm.allocatedArea || ""} onChange={e => setEditForm({ ...editForm, allocatedArea: e.target.value })} placeholder="e.g. 1.5" style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }} />
+                  <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }}>
+                    <option value="Growing">Growing</option>
+                    <option value="Planned">Planned</option>
+                    <option value="Harvested">Harvested</option>
+                  </select>
+                  <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                    <button onClick={async () => {
+                      const res = await fetch(`http://localhost:5000/api/farm/${farm._id}/crop/${crop._id}`, {
+                        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editForm)
+                      });
+                      const data = await res.json();
+                      if (data.success) { setFarm(data.data); setEditingCropId(null); }
+                    }} style={{ padding: "6px 14px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>💾 Save</button>
+                    <button onClick={() => setEditingCropId(null)} style={{ padding: "6px 14px", backgroundColor: "#888", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                // ===== VIEW MODE =====
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <strong style={{ color: "#222" }}>{crop.name || crop}</strong>
+                      {crop.season && <span style={{ marginLeft: "10px", fontSize: "0.85rem", color: "#666" }}>({crop.season})</span>}
+                    </div>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button onClick={() => { setEditingCropId(crop._id || idx); setEditForm({ name: crop.name || "", season: crop.season || "", sownDate: crop.sownDate || "", expectedHarvestDate: crop.expectedHarvestDate || "", status: crop.status || "Growing", allocatedArea: crop.allocatedArea || "" }); }}
+                        style={{ padding: "3px 10px", backgroundColor: "#1976d2", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.8rem" }}>✏️</button>
+                      <button onClick={async () => {
+                        if (!window.confirm(`Remove "${crop.name}" from this farm?`)) return;
+                        const res = await fetch(`http://localhost:5000/api/farm/${farm._id}/crop/${crop._id}`, { method: "DELETE" });
+                        const data = await res.json();
+                        if (data.success) setFarm(data.data);
+                      }} style={{ padding: "3px 10px", backgroundColor: "#e53935", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.8rem" }}>🗑️</button>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: "5px", fontSize: "0.9rem", display: "flex", justifyContent: "space-between", color: "#444" }}>
+                    <span style={{ color: "#444" }}>🌱 Sown: {crop.sownDate ? new Date(crop.sownDate).toLocaleDateString() : 'N/A'}</span>
+                    <span style={{ color: "#444" }}>🌾 Harvest: {crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate).toLocaleDateString() : 'N/A'}</span>
+                    {crop.allocatedArea > 0 && <span style={{ color: "#555" }}>🗺️ {crop.allocatedArea} ac</span>}
+                    {(() => {
+                      const { status, auto } = getEffectiveStatus(crop);
+                      const color = status === "Harvested" ? "#ff9800" : status === "Planned" ? "#2196f3" : "#4CAF50";
+                      return (
+                        <span style={{ fontWeight: "bold", color }} title={auto ? "Auto-detected from dates" : "Manually set"}>
+                          Status: {status} {auto ? "🔄" : ""}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
             </div>
           )) : <p>{farm.cropName}</p>}
         </div>

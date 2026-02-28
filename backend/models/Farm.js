@@ -35,6 +35,7 @@ const FarmSchema = new mongoose.Schema(
         season: { type: String, required: true },
         sownDate: { type: Date },
         expectedHarvestDate: { type: Date },
+        allocatedArea: { type: Number, min: 0, default: 0 },
         status: {
           type: String,
           enum: ["Growing", "Harvested", "Planned"],
