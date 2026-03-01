@@ -14,7 +14,10 @@ const AddExpense = () => {
     expenseDate: "",
     notes: "",
     farmId: routeFarmId || "",
+    cropName: "", // ✅ newly added crop reference
   });
+
+  const [crops, setCrops] = useState([]);
 
   // ✅ FETCH EXPENSE IN EDIT MODE
   useEffect(() => {
@@ -30,11 +33,29 @@ const AddExpense = () => {
               expenseDate: data.expense.expenseDate,
               notes: data.expense.notes || "",
               farmId: data.expense.farmId, // 🔥 IMPORTANT
+              cropName: data.expense.cropName || "",
             });
           }
         });
     }
-  }, [id, isEdit]);
+
+    // Fetch farm details to get available crops
+    const fetchCrops = async () => {
+      const targetFarmId = routeFarmId || form.farmId;
+      if (!targetFarmId) return;
+      try {
+        const res = await fetch(`http://localhost:5000/api/farm/details/${targetFarmId}`);
+        const data = await res.json();
+        if (data.success && data.farm && data.farm.crops) {
+          setCrops(data.farm.crops);
+        }
+      } catch (err) {
+        console.error("Failed to load farm crops", err);
+      }
+    };
+
+    fetchCrops();
+  }, [id, isEdit, routeFarmId]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -99,6 +120,17 @@ const AddExpense = () => {
           <option>Irrigation</option>
           <option>Machinery</option>
           <option>Other</option>
+        </select>
+
+        <select
+          name="cropName"
+          value={form.cropName}
+          onChange={handleChange}
+        >
+          <option value="">Farm Wide (No specific crop)</option>
+          {crops.map((crop, idx) => (
+            <option key={idx} value={crop.name}>{crop.name}</option>
+          ))}
         </select>
 
         <input

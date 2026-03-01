@@ -33,7 +33,7 @@ router.get("/farm/profit/:farmId", async (req, res) => {
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
-const totalIncome = incomeAgg[0]?.total || 0;
+    const totalIncome = incomeAgg[0]?.total || 0;
 
 
     const profit = totalIncome - totalExpense;
@@ -47,6 +47,91 @@ const totalIncome = incomeAgg[0]?.total || 0;
   } catch (error) {
     console.error("Farm profit error:", error.message);
     res.status(500).json({ success: false });
+  }
+});
+
+
+// ✅ ANNUAL CROP-LEVEL ANALYTICS (PER FARM)
+router.get("/farm/:farmId/annual-crop", async (req, res) => {
+  try {
+    const { farmId } = req.params;
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+    const farmObjectId = new mongoose.Types.ObjectId(farmId);
+
+    // 1. Aggregate Income by cropName for the given year
+    const incomeAgg = await Income.aggregate([
+      {
+        $match: {
+          farmId: farmObjectId,
+          $expr: { $eq: [{ $year: "$soldDate" }, year] }
+        }
+      },
+      {
+        $group: {
+          _id: "$cropName",
+          totalIncome: { $sum: "$totalAmount" }
+        }
+      }
+    ]);
+
+    // 2. Aggregate Expenses by cropName for the given year
+    const expenseAgg = await Expense.aggregate([
+      {
+        $match: {
+          farmId: farmObjectId,
+          $expr: { $eq: [{ $year: "$expenseDate" }, year] }
+        }
+      },
+      {
+        $group: {
+          _id: "$cropName",
+          totalExpense: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    // 3. Merge results by Crop Name
+    const cropStatsMap = {};
+
+    // Map Income
+    incomeAgg.forEach(inc => {
+      const c = inc._id || "Unknown";
+      cropStatsMap[c] = {
+        cropName: c,
+        income: inc.totalIncome,
+        expense: 0,
+        profit: inc.totalIncome
+      };
+    });
+
+    // Map Expenses
+    expenseAgg.forEach(exp => {
+      const c = exp._id || "Farm Wide"; // If no cropName assigned, treat as general
+      if (!cropStatsMap[c]) {
+        cropStatsMap[c] = {
+          cropName: c,
+          income: 0,
+          expense: 0,
+          profit: 0
+        };
+      }
+      cropStatsMap[c].expense = exp.totalExpense;
+      cropStatsMap[c].profit = cropStatsMap[c].income - exp.totalExpense;
+    });
+
+    const results = Object.values(cropStatsMap);
+
+    res.json({
+      success: true,
+      year,
+      data: results
+    });
+  } catch (error) {
+    console.error("Annual crop analytics error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch annual crop analytics"
+    });
   }
 });
 

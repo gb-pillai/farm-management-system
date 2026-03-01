@@ -211,6 +211,7 @@ function Dashboard() {
                   onClick={() => navigate(`/farm/${farm._id}`)}
                 >
                   <h4>{farm.farmName}</h4>
+                  <p style={{ fontSize: "0.8rem", color: "#8fbc8f", margin: "2px 0 6px" }}>📍 {farm.location}</p>
                   <p>{farm.crops && farm.crops.length > 0 ? farm.crops.map(c => c.name || c).join(", ") : farm.cropName}</p>
                   <span className="view-link">View →</span>
                 </div>

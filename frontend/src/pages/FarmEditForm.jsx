@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getPreferredUnit, acresToDisplay, displayToAcres, shortLabel } from "../utils/areaUtils";
+import UnitSelector from "../components/UnitSelector";
 import "./FarmForm.css";
 
 function FarmEditForm() {
@@ -12,6 +14,7 @@ function FarmEditForm() {
     const [season, setSeason] = useState("");
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
+    const [unit, setUnit] = useState(getPreferredUnit());
 
     // New crop state
     const [newCrop, setNewCrop] = useState({ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "" });
@@ -26,7 +29,7 @@ function FarmEditForm() {
                     const farm = data.data;
                     setFarmName(farm.farmName);
                     setLocation(farm.location);
-                    setAreaInAcres(farm.areaInAcres);
+                    setAreaInAcres(acresToDisplay(farm.areaInAcres, getPreferredUnit()).toFixed(2));
                     setSeason(farm.season);
                     setFarmData(farm);
                 }
@@ -41,7 +44,7 @@ function FarmEditForm() {
             const res = await fetch(`http://localhost:5000/api/farm/${farmId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ farmName, location, areaInAcres, season }),
+                body: JSON.stringify({ farmName, location, areaInAcres: displayToAcres(areaInAcres, unit), season }),
             });
             const data = await res.json();
             if (data.success) {
@@ -65,7 +68,7 @@ function FarmEditForm() {
             const res = await fetch(`http://localhost:5000/api/farm/${farmId}/crop`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newCrop),
+                body: JSON.stringify({ ...newCrop, allocatedArea: displayToAcres(newCrop.allocatedArea, unit) }),
             });
             const data = await res.json();
             if (data.success) {
@@ -116,20 +119,19 @@ function FarmEditForm() {
                     <option value="Kasaragod">Kasaragod</option>
                 </select>
 
-                <input
-                    type="number"
-                    placeholder="Area in Acres"
-                    value={areaInAcres}
-                    onChange={(e) => setAreaInAcres(e.target.value)}
-                    required
-                />
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <input
+                        type="number"
+                        placeholder={`Area (${shortLabel(unit)})`}
+                        value={areaInAcres}
+                        onChange={(e) => setAreaInAcres(e.target.value)}
+                        required
+                        style={{ flex: 1 }}
+                    />
+                    <UnitSelector onChange={(u) => setUnit(u)} />
+                </div>
 
-                <select value={season} onChange={(e) => setSeason(e.target.value)} required>
-                    <option value="">Select Primary Season</option>
-                    <option value="Monsoon">Monsoon</option>
-                    <option value="Post-Monsoon">Post-Monsoon</option>
-                    <option value="Summer">Summer</option>
-                </select>
+
 
                 <button type="submit">💾 Save Changes</button>
             </form>
@@ -142,37 +144,49 @@ function FarmEditForm() {
 
             {/* ===== ADD NEW CROP SECTION ===== */}
             <hr style={{ margin: "30px 0", borderColor: "#333" }} />
-            <h2>🌱 Add New Crop to This Farm</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                <h2 style={{ margin: 0 }}>🌱 Add New Crop to This Farm</h2>
+                <UnitSelector onChange={(u) => setUnit(u)} />
+            </div>
 
             {/* Live land availability badge — recalculates based on selected dates */}
             {farmData && (() => {
                 const newStart = newCrop.sownDate ? new Date(newCrop.sownDate) : null;
                 const newEnd = newCrop.expectedHarvestDate ? new Date(newCrop.expectedHarvestDate) : null;
+                const today = new Date(); today.setHours(0, 0, 0, 0);
 
                 const usedArea = (farmData.crops || []).reduce((sum, c) => {
                     if (!c.allocatedArea) return sum;
                     const exStart = c.sownDate ? new Date(c.sownDate) : null;
                     const exEnd = c.expectedHarvestDate ? new Date(c.expectedHarvestDate) : null;
 
-                    // If dates are missing on either side, assume overlap (safe default)
-                    if (!newStart || !newEnd || !exStart || !exEnd) return sum + c.allocatedArea;
+                    if (newStart && newEnd && exStart && exEnd) {
+                        // Both have dates: use temporal overlap check
+                        const overlaps = newStart <= exEnd && newEnd >= exStart;
+                        return overlaps ? sum + c.allocatedArea : sum;
+                    }
 
-                    // Overlap: newStart <= exEnd AND newEnd >= exStart
-                    const overlaps = newStart <= exEnd && newEnd >= exStart;
-                    return overlaps ? sum + c.allocatedArea : sum;
+                    // Fallback: only count if crop is currently active (today within range)
+                    if (exStart && exEnd) {
+                        const isActive = today >= exStart && today <= exEnd;
+                        return isActive ? sum + c.allocatedArea : sum;
+                    }
+
+                    // No dates at all: count it (safe default)
+                    return sum + c.allocatedArea;
                 }, 0);
                 const available = Math.max(0, (farmData.areaInAcres || 0) - usedArea);
                 const color = available === 0 ? "#e53935" : available < 1 ? "#ff9800" : "#4CAF50";
                 const dateLabel = newStart && newEnd
                     ? `during ${newStart.toLocaleDateString()} – ${newEnd.toLocaleDateString()}`
-                    : "(select crop dates to see time-specific availability)";
+                    : "(showing currently active land usage)";
                 return (
                     <div style={{ padding: "10px 14px", backgroundColor: "#1b2a1b", borderRadius: "8px", marginBottom: "16px", fontSize: "0.9rem", color: "#eee" }}>
-                        🗺️ <strong>Farm Area:</strong> {farmData.areaInAcres} acres &nbsp;|&nbsp;
-                        <strong style={{ color: "#aaa" }}>In Use: {usedArea.toFixed(2)} ac</strong> &nbsp;|&nbsp;
-                        <strong style={{ color }}>Available: {available.toFixed(2)} ac</strong>
+                        🗺️ <strong>Farm Area:</strong> {acresToDisplay(farmData.areaInAcres, unit).toFixed(2)} {shortLabel(unit)} &nbsp;|&nbsp;
+                        <strong style={{ color: "#aaa" }}>In Use: {acresToDisplay(usedArea, unit).toFixed(2)} {shortLabel(unit)}</strong> &nbsp;|&nbsp;
+                        <strong style={{ color }}>Available: {acresToDisplay(available, unit).toFixed(2)} {shortLabel(unit)}</strong>
                         <div style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "4px" }}>📅 {dateLabel}</div>
-                        {available === 0 && newStart && newEnd && <span style={{ color: "#e53935" }}>⚠️ No land free during this period!</span>}
+                        {available === 0 && <span style={{ color: "#e53935" }}>⚠️ No land free{newStart && newEnd ? " during this period" : " right now"}!</span>}
                     </div>
                 );
             })()}
@@ -221,12 +235,12 @@ function FarmEditForm() {
                 </div>
 
                 <div>
-                    <label style={{ fontSize: "0.85rem", color: "#aaa", display: "block", marginBottom: "4px" }}>Allocated Area (acres)</label>
+                    <label style={{ fontSize: "0.85rem", color: "#aaa", display: "block", marginBottom: "4px" }}>Allocated Area ({shortLabel(unit)})</label>
                     <input
                         type="number"
                         min="0"
                         step="0.1"
-                        placeholder="How many acres does this crop need?"
+                        placeholder={`How many ${shortLabel(unit)} does this crop need?`}
                         value={newCrop.allocatedArea}
                         onChange={(e) => setNewCrop({ ...newCrop, allocatedArea: e.target.value })}
                     />

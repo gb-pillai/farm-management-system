@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { getPreferredUnit, acresToDisplay, shortLabel } from "../utils/areaUtils";
+import UnitSelector from "../components/UnitSelector";
 
 import "./FarmDetails.css";
 
@@ -23,183 +25,55 @@ function getEffectiveStatus(crop) {
 }
 
 function FarmDetails() {
-  const [uiMessage, setUiMessage] = useState("");
-  const [uiType, setUiType] = useState("");
-  const [applying, setApplying] = useState(false);
-  const userId = localStorage.getItem("userId");
-
   const { farmId } = useParams();
   const navigate = useNavigate();
 
   const [farm, setFarm] = useState(null);
   const [fertilizers, setFertilizers] = useState([]);
-  const [fertilizerName, setFertilizerName] = useState("Urea");
-
-  // 🔹 Recommendation states
-  const [stage, setStage] = useState("");
-  const [availableStages, setAvailableStages] = useState([]); // ✅ NEW
-  const [lastDate, setLastDate] = useState("");
-  const [farmerInterval, setFarmerInterval] = useState("");
-  const [recommendation, setRecommendation] = useState(null);
-  const [loadingRec, setLoadingRec] = useState(false);
-
-  // 🔹 Multiple Crops Selection
-  const [selectedCrop, setSelectedCrop] = useState("");
 
   // 🔹 Inline Crop Edit State
   const [editingCropId, setEditingCropId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [unit, setUnit] = useState(getPreferredUnit());
 
-  // Weather
-  const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
-  const [weather, setWeather] = useState(null);
+  // 🔹 Analytics State
+  const [cropAnalytics, setCropAnalytics] = useState([]);
+  const [analyticsYear, setAnalyticsYear] = useState(new Date().getFullYear());
 
-  // ================= WEATHER =================
-  useEffect(() => {
-    const fetchWeather = async () => {
-      if (farm?.location) {
-        const response = await axios.get(
-          `https://api.openweathermap.org/data/2.5/weather?q=${farm.location},IN&units=metric&appid=${API_KEY}`
-        );
-        setWeather(response.data);
-      }
-    };
-    fetchWeather();
-  }, [farm?.location, API_KEY]); // ✅ fixed dependency
-
-  // ================= FETCH FARM =================
+  // ================= FETCH FARM & ANALYTICS =================
   useEffect(() => {
     fetch(`http://localhost:5000/api/farm/details/${farmId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           setFarm(data.data);
-          // Set initial active crop
-          if (data.data.crops && data.data.crops.length > 0) {
-            const firstCrop = data.data.crops[0];
-            setSelectedCrop(firstCrop.name || firstCrop);
-          } else if (data.data.cropName) {
-            setSelectedCrop(data.data.cropName);
-          }
         }
-      });
+      })
+      .catch((err) => console.error(err));
+
+    fetch(`http://localhost:5000/api/analytics/farm/${farmId}/annual-crop?year=${analyticsYear}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setCropAnalytics(Array.isArray(data.data) ? data.data : []);
+        } else {
+          setCropAnalytics([]);
+        }
+      })
+      .catch((err) => console.error("Error fetching crop analytics", err));
 
     fetch(`http://localhost:5000/api/fertilizer/farm/${farmId}`)
       .then((res) => res.json())
       .then((data) => {
-        setFertilizers(data);
+        setFertilizers(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("Error fetching fertilizers", err);
+        setFertilizers([]);
       });
-  }, [farmId]);
+  }, [farmId, analyticsYear]);
 
-  // ================= LOAD STAGES DYNAMICALLY =================
-  useEffect(() => {
-    if (!selectedCrop) return;
 
-    fetch("http://localhost:5000/api/recommendation/stages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        crop: selectedCrop.toLowerCase(),
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.stages) {
-          setAvailableStages(data.stages);
-          setStage(""); // reset stage when crop loads
-        }
-      });
-  }, [selectedCrop]); // ✅ Depends on selectedCrop now
-
-  // ================= CALCULATE =================
-  const calculateRecommendation = async () => {
-    if (!stage || !lastDate) {
-      alert("Please enter stage and last fertilizer date");
-      return;
-    }
-
-    setLoadingRec(true);
-
-    try {
-      const res = await fetch(
-        "http://localhost:5000/api/recommendation/next-date",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            crop: selectedCrop.toLowerCase(),
-            stage,
-            fertilizer: fertilizerName.toLowerCase(),
-            lastDate,
-            farmerInterval: farmerInterval ? Number(farmerInterval) : undefined,
-            location: farm.location // ✅ ADD THIS
-          }),
-        }
-      );
-
-      const data = await res.json();
-      setRecommendation(data);
-    } catch {
-      alert("Failed to calculate recommendation");
-    }
-
-    setLoadingRec(false);
-  };
-
-  const applyRecommendation = async () => {
-    setApplying(true);
-    setUiMessage("");
-
-    try {
-      const res = await fetch(
-        "http://localhost:5000/api/fertilizer/add",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId,
-            farmId: farm._id,
-            fertilizerName,
-            appliedDate: lastDate,
-            intervalDays: recommendation.usedInterval,
-            quantity: 1,
-            unit: "kg",
-            cropName: selectedCrop,
-            notes: recommendation.message,
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setUiType("error");
-        setUiMessage(data.error || "Failed to apply recommendation");
-        setApplying(false);
-        return;
-      }
-
-      setUiType("success");
-      setUiMessage("✅ Recommendation applied successfully");
-
-      const historyRes = await fetch(
-        `http://localhost:5000/api/fertilizer/farm/${farmId}`
-      );
-      const historyData = await historyRes.json();
-      setFertilizers(historyData);
-
-      setRecommendation(null);
-    } catch {
-      setUiType("error");
-      setUiMessage("❌ Server error while applying recommendation");
-    }
-
-    setApplying(false);
-  };
 
   if (!farm) return <p>Loading farm details...</p>;
 
@@ -208,26 +82,6 @@ function FarmDetails() {
       <button className="back-btn" onClick={() => navigate("/dashboard")}>
         ⬅ Back to Dashboard
       </button>
-
-      {weather && (
-        <div className="weather-card">
-          <div className="weather-header">
-            <h3>🌤 Farm Weather</h3>
-            <span className="weather-condition">
-              {weather.weather[0].description}
-            </span>
-          </div>
-          <div className="weather-main">
-            <div className="temperature">
-              {Math.round(weather.main.temp)}°C
-            </div>
-            <div className="weather-details">
-              <p>💧 Humidity: {weather.main.humidity}%</p>
-              <p>🌡 Feels Like: {Math.round(weather.main.feels_like)}°C</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* FARM HEADER */}
       <div className="farm-header card">
@@ -242,11 +96,20 @@ function FarmDetails() {
         </div>
         <div className="farm-meta">
           <p><strong>Location:</strong> {farm.location}</p>
-          <p><strong>Area:</strong> {farm.areaInAcres} acres</p>
-          <p><strong>Primary Season:</strong> {farm.season}</p>
+          <p><strong>Area:</strong> {acresToDisplay(farm.areaInAcres, unit).toFixed(2)} {shortLabel(unit)}</p>
+          <p><strong>📅 Season:</strong> {(() => {
+            const m = new Date().getMonth();
+            if (m >= 5 && m <= 8) return "☔ Monsoon (Jun–Sep)";
+            if (m >= 9 && m <= 10) return "🍂 Post-Monsoon (Oct–Nov)";
+            if (m >= 11 || m <= 1) return "❄️ Winter (Dec–Feb)";
+            return "☀️ Summer (Mar–May)";
+          })()}</p>
         </div>
 
-        <h4 style={{ marginTop: "15px", marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px" }}>Active Crops</h4>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "15px", marginBottom: "10px", borderBottom: "1px solid #ddd", paddingBottom: "5px" }}>
+          <h4 style={{ margin: 0 }}>Active Crops</h4>
+          <UnitSelector onChange={(u) => setUnit(u)} style={{ backgroundColor: "#f0f4f0", color: "#333", border: "1px solid #ccc" }} />
+        </div>
 
         {/* ====== LAND USAGE BAR ====== */}
         {(() => {
@@ -274,8 +137,8 @@ function FarmDetails() {
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "0.9rem" }}>
                 <span><strong>🗺️ Land Usage (Today)</strong></span>
                 <span style={{ color: available === 0 ? "#e53935" : "#333" }}>
-                  <strong style={{ color: "#4CAF50" }}>{usedArea.toFixed(2)} used</strong> / {total} acres &nbsp;|&nbsp;
-                  <strong style={{ color: available === 0 ? "#e53935" : "#1976d2" }}>{available.toFixed(2)} available</strong>
+                  <strong style={{ color: "#4CAF50" }}>{acresToDisplay(usedArea, unit).toFixed(2)} used</strong> / {acresToDisplay(total, unit).toFixed(2)} {shortLabel(unit)} &nbsp;|&nbsp;
+                  <strong style={{ color: available === 0 ? "#e53935" : "#1976d2" }}>{acresToDisplay(available, unit).toFixed(2)} available</strong>
                 </span>
               </div>
               <div style={{ height: "10px", backgroundColor: "#ddd", borderRadius: "5px", overflow: "hidden" }}>
@@ -305,8 +168,8 @@ function FarmDetails() {
                   <input type="date" value={editForm.sownDate ? editForm.sownDate.substring(0, 10) : ""} onChange={e => setEditForm({ ...editForm, sownDate: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }} />
                   <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Expected Harvest</label>
                   <input type="date" value={editForm.expectedHarvestDate ? editForm.expectedHarvestDate.substring(0, 10) : ""} onChange={e => setEditForm({ ...editForm, expectedHarvestDate: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }} />
-                  <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Allocated Area (acres)</label>
-                  <input type="number" min="0" step="0.1" value={editForm.allocatedArea || ""} onChange={e => setEditForm({ ...editForm, allocatedArea: e.target.value })} placeholder="e.g. 1.5" style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }} />
+                  <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Allocated Area ({shortLabel(unit)})</label>
+                  <input type="number" min="0" step="0.1" value={editForm.allocatedArea || ""} onChange={e => setEditForm({ ...editForm, allocatedArea: e.target.value })} placeholder={`e.g. 1.5 ${shortLabel(unit)}`} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }} />
                   <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }}>
                     <option value="Growing">Growing</option>
                     <option value="Planned">Planned</option>
@@ -345,7 +208,7 @@ function FarmDetails() {
                   <div style={{ marginTop: "5px", fontSize: "0.9rem", display: "flex", justifyContent: "space-between", color: "#444" }}>
                     <span style={{ color: "#444" }}>🌱 Sown: {crop.sownDate ? new Date(crop.sownDate).toLocaleDateString() : 'N/A'}</span>
                     <span style={{ color: "#444" }}>🌾 Harvest: {crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate).toLocaleDateString() : 'N/A'}</span>
-                    {crop.allocatedArea > 0 && <span style={{ color: "#555" }}>🗺️ {crop.allocatedArea} ac</span>}
+                    {crop.allocatedArea > 0 && <span style={{ color: "#555" }}>🗺️ {acresToDisplay(crop.allocatedArea, unit).toFixed(2)} {shortLabel(unit)}</span>}
                     {(() => {
                       const { status, auto } = getEffectiveStatus(crop);
                       const color = status === "Harvested" ? "#ff9800" : status === "Planned" ? "#2196f3" : "#4CAF50";
@@ -416,144 +279,86 @@ function FarmDetails() {
         </button>
       </div>
 
-      {/* EXPENSE SECTION */}
-      <div className="card">
-        <h3>💰 Expense</h3>
-
-        <div className="button-row">
+      {/* EXPENSE & INCOME SECTION */}
+      <div className="card analytics-card">
+        <h3>💰 Financials</h3>
+        <p>Manage expenses and income records for this farm.</p>
+        <div className="btn-group">
           <button onClick={() => navigate(`/farm/${farm._id}/expenses`)}>
             View Expenses
           </button>
-
           <button onClick={() => navigate(`/farm/${farm._id}/add-expense`)}>
             ➕ Add Expense
           </button>
-
           <button onClick={() => navigate(`/farm/${farm._id}/income`)}>
             View Income
           </button>
-
-          <button
-            className="add-income-btn"
-            onClick={() => navigate(`/farm/${farmId}/income/add`)}
-          >
+          <button className="add-income-btn" onClick={() => navigate(`/farm/${farmId}/income/add`)}>
             + Add Income
           </button>
         </div>
       </div>
 
-      {/* FERTILIZER RECOMMENDATION */}
-      <div className="card recommendation-card">
-        <h3 className="section-title">📊 Fertilizer Recommendation</h3>
-
-        <div className="rec-form">
-          <select value={selectedCrop} onChange={(e) => setSelectedCrop(e.target.value)}>
-            {farm.crops && farm.crops.length > 0 ? (
-              farm.crops.map((c, idx) => {
-                const cropName = c.name || c;
-                return <option key={idx} value={cropName}>{cropName}</option>;
-              })
-            ) : (
-              <option value={farm.cropName}>{farm.cropName}</option>
-            )}
+      {/* ANNUAL CROP ANALYTICS SECTION */}
+      <div className="card crop-analytics-card" style={{ marginTop: "20px", width: "100%" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3>📊 Annual Crop Profitability ({analyticsYear})</h3>
+          <select
+            value={analyticsYear}
+            onChange={(e) => setAnalyticsYear(Number(e.target.value))}
+            style={{ padding: "5px", borderRadius: "4px" }}
+          >
+            {[0, 1, 2, 3, 4].map(offset => {
+              const year = new Date().getFullYear() - offset;
+              return <option key={year} value={year}>{year}</option>
+            })}
           </select>
-
-          <input
-            type="text"
-            value={fertilizerName}
-            onChange={(e) => setFertilizerName(e.target.value)}
-            placeholder="Fertilizer name"
-          />
-
-          <select value={stage} onChange={(e) => setStage(e.target.value)}>
-            <option value="">Select Crop Stage</option>
-            {availableStages.map((s) => (
-              <option key={s} value={s}>
-                {s.replace("_", " ").toUpperCase()}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="date"
-            value={lastDate}
-            onChange={(e) => setLastDate(e.target.value)}
-          />
-
-          <input
-            type="number"
-            placeholder="Farmer Interval (optional)"
-            value={farmerInterval}
-            onChange={(e) => setFarmerInterval(e.target.value)}
-          />
         </div>
 
-        <button
-          className="primary-btn full-width"
-          onClick={calculateRecommendation}
-        >
-          {loadingRec ? "Calculating..." : "Calculate Next Fertilizer"}
-        </button>
-
-        {recommendation && (
-          <div className="recommendation-result">
-
-            <div className="result-row">
-              <span>📅 Next Date</span>
-              <strong>{recommendation.nextDate}</strong>
-            </div>
-
-            <div className="result-row">
-              <span>⏱ Final Interval Used</span>
-              <strong>{recommendation.usedInterval} days</strong>
-            </div>
-
-            <hr style={{ margin: "10px 0", opacity: 0.2 }} />
-
-            <p><strong>📊 Interval Breakdown</strong></p>
-
-            <p>🌾 Crop Stage Interval: {recommendation.cropInterval} days</p>
-
-            <p>🧪 Fertilizer Minimum Interval: {recommendation.fertilizerInterval} days</p>
-
-            <p>🛡 Base Safe Interval: {recommendation.baseInterval} days</p>
-
-            {recommendation.farmerInterval && (
-              <p>👨‍🌾 Farmer Requested: {recommendation.farmerInterval} days</p>
-            )}
-
-            <p>📌 Decision: {recommendation.message}</p>
-
-            <div className="result-row">
-              <span>🌦 Weather</span>
-              <strong>{recommendation.weatherStatus}</strong>
-            </div>
-
-            <button
-              className="primary-btn"
-              onClick={applyRecommendation}
-              disabled={applying}
-            >
-              {applying ? "Applying..." : "✅ Apply Recommendation"}
-            </button>
-          </div>
+        {cropAnalytics.length === 0 ? (
+          <p style={{ color: "#aaa" }}>No income or expenses recorded for this year.</p>
+        ) : (
+          <table style={{ width: "100%", marginTop: "15px", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #444", textAlign: "left" }}>
+                <th style={{ padding: "10px" }}>Crop / Category</th>
+                <th style={{ padding: "10px", color: "#4CAF50" }}>Income (₹)</th>
+                <th style={{ padding: "10px", color: "#e53935" }}>Expense (₹)</th>
+                <th style={{ padding: "10px" }}>Net Profit (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cropAnalytics.map((stat, idx) => (
+                <tr key={idx} style={{ borderBottom: "1px solid #333" }}>
+                  <td style={{ padding: "10px" }}><strong>{stat.cropName}</strong></td>
+                  <td style={{ padding: "10px", color: "#4CAF50" }}>{stat.income}</td>
+                  <td style={{ padding: "10px", color: "#e53935" }}>{stat.expense}</td>
+                  <td style={{ padding: "10px", color: stat.profit >= 0 ? "#4CAF50" : "#e53935", fontWeight: "bold" }}>
+                    {stat.profit >= 0 ? "+" : ""}{stat.profit}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {uiMessage && (
-        <div className={`alert ${uiType}`}>
-          {uiMessage}
-        </div>
-      )}
-
       <button
         className="predict-btn"
+        style={{ marginTop: "20px" }}
         onClick={() => navigate(`/farm/${farm._id}/yield`)}
       >
         📈 Predict Yield
       </button>
+
     </div>
   );
 }
 
-export default FarmDetails;
+export default function FarmDetailsWrapper(props) {
+  return (
+    <ErrorBoundary>
+      <FarmDetails {...props} />
+    </ErrorBoundary>
+  );
+}

@@ -1,17 +1,64 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getPreferredUnit, displayToAcres, acresToDisplay, shortLabel } from "../utils/areaUtils";
+import UnitSelector from "../components/UnitSelector";
 import "./FarmForm.css";
 
 function FarmForm() {
   const [farmName, setFarmName] = useState("");
   const [location, setLocation] = useState("");
-  const [crops, setCrops] = useState([{ name: "", season: "", sownDate: "", expectedHarvestDate: "" }]);
+  const [crops, setCrops] = useState([{ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "" }]);
   const [areaInAcres, setAreaInAcres] = useState("");
   const [season, setSeason] = useState("");
   const [yieldAmount, setYieldAmount] = useState("");
   const [profit, setProfit] = useState("");
   const [message, setMessage] = useState("");
+  const [unit, setUnit] = useState(getPreferredUnit());
   const navigate = useNavigate();
+
+  // Compute live land usage across all crops (using temporal overlap)
+  const computeLandUsage = () => {
+    const total = parseFloat(areaInAcres) || 0;
+    if (total === 0) return { total: 0, used: 0, available: 0, warnings: [] };
+
+    const warnings = [];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+    // Only count crops that are NOT already harvested (today <= expectedHarvestDate)
+    const activeCrops = crops.filter(c => {
+      if (!c.expectedHarvestDate) return true; // no date = assume active
+      return today <= new Date(c.expectedHarvestDate);
+    });
+
+    const totalAllocated = activeCrops.reduce((sum, c) => sum + (parseFloat(c.allocatedArea) || 0), 0);
+
+    // Check for time-overlapping active crops that exceed farm area
+    for (let i = 0; i < activeCrops.length; i++) {
+      const ci = activeCrops[i];
+      const ciStart = ci.sownDate ? new Date(ci.sownDate) : null;
+      const ciEnd = ci.expectedHarvestDate ? new Date(ci.expectedHarvestDate) : null;
+      if (!ciStart || !ciEnd || !ci.allocatedArea) continue;
+
+      let overlapTotal = parseFloat(ci.allocatedArea) || 0;
+      for (let j = 0; j < activeCrops.length; j++) {
+        if (i === j) continue;
+        const cj = activeCrops[j];
+        const cjStart = cj.sownDate ? new Date(cj.sownDate) : null;
+        const cjEnd = cj.expectedHarvestDate ? new Date(cj.expectedHarvestDate) : null;
+        if (!cjStart || !cjEnd || !cj.allocatedArea) continue;
+
+        if (ciStart <= cjEnd && ciEnd >= cjStart) {
+          overlapTotal += parseFloat(cj.allocatedArea) || 0;
+        }
+      }
+      if (overlapTotal > total) {
+        warnings.push(`⚠️ Crops overlapping during ${ciStart.toLocaleDateString()} – ${ciEnd.toLocaleDateString()} use ${overlapTotal.toFixed(1)} ac (farm has only ${total} ac)`);
+      }
+    }
+
+    const uniqueWarnings = [...new Set(warnings)];
+    return { total, used: totalAllocated, available: Math.max(0, total - totalAllocated), warnings: uniqueWarnings };
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +70,21 @@ function FarmForm() {
       return;
     }
 
+    // Validate land allocation before submitting
+    const { warnings } = computeLandUsage();
+    if (warnings.length > 0) {
+      if (!window.confirm("There are land overlap warnings:\n\n" + warnings.join("\n") + "\n\nProceed anyway?")) {
+        return;
+      }
+    }
+
     try {
+      const currentMonth = new Date().getMonth();
+      let calculatedSeason = "Summer";
+      if (currentMonth >= 5 && currentMonth <= 8) calculatedSeason = "Monsoon";
+      else if (currentMonth >= 9 && currentMonth <= 10) calculatedSeason = "Post-Monsoon";
+      else if (currentMonth >= 11 || currentMonth <= 1) calculatedSeason = "Winter";
+
       const response = await fetch("http://localhost:5000/api/farm", {
         method: "POST",
         headers: {
@@ -33,9 +94,9 @@ function FarmForm() {
           userId,
           farmName,
           location,
-          crops,
-          areaInAcres,
-          season,
+          crops: crops.map(c => ({ ...c, allocatedArea: displayToAcres(c.allocatedArea, unit) })),
+          areaInAcres: displayToAcres(areaInAcres, unit),
+          season: calculatedSeason,
           yieldAmount,
           profit
         })
@@ -47,7 +108,7 @@ function FarmForm() {
         setMessage("Farm added successfully");
         setFarmName("");
         setLocation("");
-        setCrops([{ name: "", season: "", sownDate: "", expectedHarvestDate: "" }]);
+        setCrops([{ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "" }]);
         setAreaInAcres("");
         setSeason("");
         setYieldAmount("");
@@ -59,6 +120,8 @@ function FarmForm() {
       setMessage("Server error");
     }
   };
+
+  const { total, used, available, warnings } = computeLandUsage();
 
   return (
     <div className="farm-form-container">
@@ -99,6 +162,46 @@ function FarmForm() {
           <option value="Kasaragod">Kasaragod</option>
         </select>
 
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            type="number"
+            placeholder={`Total Area (${shortLabel(unit)})`}
+            value={areaInAcres}
+            onChange={(e) => setAreaInAcres(e.target.value)}
+            required
+            style={{ flex: 1 }}
+          />
+          <UnitSelector onChange={(u) => setUnit(u)} />
+        </div>
+
+
+
+        {/* ====== LIVE LAND USAGE SUMMARY ====== */}
+        {areaInAcres && (
+          <div style={{ padding: "12px 14px", backgroundColor: "#1b2a1b", borderRadius: "8px", marginBottom: "10px", fontSize: "0.9rem", color: "#eee" }}>
+            <div style={{ marginBottom: "6px" }}>
+              🗺️ <strong>Farm Area:</strong> {total} {shortLabel(unit)} &nbsp;|&nbsp;
+              <strong style={{ color: "#aaa" }}>Allocated: {used.toFixed(2)} {shortLabel(unit)}</strong> &nbsp;|&nbsp;
+              <strong style={{ color: available === 0 ? "#e53935" : available < 1 ? "#ff9800" : "#4CAF50" }}>
+                Remaining: {available.toFixed(2)} {shortLabel(unit)}
+              </strong>
+            </div>
+            <div style={{ height: "8px", backgroundColor: "#333", borderRadius: "4px", overflow: "hidden" }}>
+              <div style={{
+                height: "100%",
+                width: `${total > 0 ? Math.min(100, (used / total) * 100) : 0}%`,
+                backgroundColor: used > total ? "#e53935" : used / total >= 0.7 ? "#ff9800" : "#4CAF50",
+                borderRadius: "4px",
+                transition: "width 0.3s ease"
+              }} />
+            </div>
+            {warnings.map((w, i) => (
+              <p key={i} style={{ color: "#ff9800", fontSize: "0.8rem", marginTop: "6px", marginBottom: 0 }}>{w}</p>
+            ))}
+          </div>
+        )}
+
+        {/* ====== CROP INPUTS ====== */}
         {crops.map((crop, index) => (
           <div key={index} className="crop-input-group" style={{
             display: "flex", flexDirection: "column", gap: "10px",
@@ -106,7 +209,7 @@ function FarmForm() {
             borderRadius: "8px", backgroundColor: "#f9f9f9"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h4>Crop {index + 1}</h4>
+              <h4 style={{ color: "#222" }}>Crop {index + 1}</h4>
               {crops.length > 1 && (
                 <button
                   type="button"
@@ -132,7 +235,7 @@ function FarmForm() {
                 setCrops(newCrops);
               }}
               required
-              style={{ marginBottom: 0 }}
+              style={{ marginBottom: 0, color: "#333" }}
             />
 
             <select
@@ -143,7 +246,7 @@ function FarmForm() {
                 setCrops(newCrops);
               }}
               required
-              style={{ padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
+              style={{ padding: "10px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }}
             >
               <option value="">Select Season for this Crop</option>
               <option value="Monsoon">Monsoon</option>
@@ -183,32 +286,34 @@ function FarmForm() {
                 />
               </div>
             </div>
+
+            {/* Allocated Area for this crop */}
+            <div>
+              <label style={{ fontSize: "0.85rem", color: "#555" }}>🗺️ Allocated Area ({shortLabel(unit)})</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder={`How many ${shortLabel(unit)} for this crop?`}
+                value={crop.allocatedArea}
+                onChange={(e) => {
+                  const newCrops = [...crops];
+                  newCrops[index].allocatedArea = e.target.value;
+                  setCrops(newCrops);
+                }}
+                style={{ width: "100%", marginBottom: 0, color: "#333" }}
+              />
+            </div>
           </div>
         ))}
         <button
           type="button"
           className="add-crop-btn"
-          onClick={() => setCrops([...crops, { name: "", season: "", sownDate: "", expectedHarvestDate: "" }])}
+          onClick={() => setCrops([...crops, { name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "" }])}
           style={{ marginBottom: "15px", padding: "8px 15px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.9rem" }}
         >
           ➕ Add Another Crop
         </button>
-
-        <input
-          type="number"
-          placeholder="Area in Acres"
-          value={areaInAcres}
-          onChange={(e) => setAreaInAcres(e.target.value)}
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="Season (Monsoon / Summer)"
-          value={season}
-          onChange={(e) => setSeason(e.target.value)}
-          required
-        />
 
         <input
           type="number"
@@ -224,7 +329,7 @@ function FarmForm() {
           onChange={(e) => setProfit(e.target.value)}
         />
 
-        <button type="submit">Add Farm</button>
+        <button type="submit">🌾 Add Farm</button>
       </form>
 
       {message && (
