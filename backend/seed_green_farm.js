@@ -233,18 +233,65 @@ async function seed() {
     if (Income) {
         try {
             await Income.deleteMany({ farmId: farm._id });
+            console.log("🗑  Cleared existing income records");
+
             const incomeData = [
-                { farmId: farm._id, cropName: "Paddy", title: "Paddy sale (850 kg @ ₹22)", amount: 18700, incomeDate: new Date("2024-11-28"), category: "Crop Sale" },
-                { farmId: farm._id, cropName: "Tapioca", title: "Tapioca sale (1.2 ton)", amount: 14400, incomeDate: new Date("2025-10-15"), category: "Crop Sale" },
-                { farmId: farm._id, cropName: "Banana", title: "Banana bunch sale (40 bunches)", amount: 12000, incomeDate: new Date("2025-08-20"), category: "Crop Sale" },
-                { farmId: farm._id, cropName: "Banana", title: "Banana – second harvest", amount: 9500, incomeDate: new Date("2026-01-12"), category: "Crop Sale" },
+                // 2024 – Paddy Harvest
+                {
+                    farmId: farm._id, userId, cropName: "Paddy",
+                    quantity: 850, pricePerUnit: 22, totalAmount: 18700,
+                    soldDate: new Date("2024-11-28"), notes: "Sold to local mill (Uma variety)"
+                },
+                // 2025 – Tapioca Harvest
+                {
+                    farmId: farm._id, userId, cropName: "Tapioca",
+                    quantity: 1200, pricePerUnit: 15, totalAmount: 18000,
+                    soldDate: new Date("2025-10-15"), notes: "Wholesale buyer (1.2 tons)"
+                },
+                // 2025 – Banana (First major harvest)
+                {
+                    farmId: farm._id, userId, cropName: "Banana",
+                    quantity: 450, pricePerUnit: 35, totalAmount: 15750,
+                    soldDate: new Date("2025-08-20"), notes: "Harvested 40 bunches"
+                },
+                // 2025 – Ginger (Dec Harvest)
+                {
+                    farmId: farm._id, userId, cropName: "Ginger",
+                    quantity: 400, pricePerUnit: 140, totalAmount: 56000,
+                    soldDate: new Date("2025-12-10"), notes: "High yield from 100kg seeds"
+                },
+                // 2026 – Banana (Jan harvest)
+                {
+                    farmId: farm._id, userId, cropName: "Banana",
+                    quantity: 380, pricePerUnit: 38, totalAmount: 14440,
+                    soldDate: new Date("2026-01-12"), notes: "Off-season price advantage"
+                },
+                // 2026 – Black Pepper (Feb harvest)
+                {
+                    farmId: farm._id, userId, cropName: "Black Pepper",
+                    quantity: 80, pricePerUnit: 600, totalAmount: 48000,
+                    soldDate: new Date("2026-02-15"), notes: "Dry pepper berries (80kg)"
+                },
+                // 2026 – Coconut (Feb plucked)
+                {
+                    farmId: farm._id, userId, cropName: "Coconut",
+                    quantity: 500, pricePerUnit: 15, totalAmount: 7500,
+                    soldDate: new Date("2026-02-28"), notes: "Bulk sale to oil mill"
+                },
+                // 2026 – Banana (March current harvest)
+                {
+                    farmId: farm._id, userId, cropName: "Banana",
+                    quantity: 200, pricePerUnit: 40, totalAmount: 8000,
+                    soldDate: new Date("2026-03-02"), notes: "Recent bunch sales"
+                }
             ];
             await Income.insertMany(incomeData);
             console.log(`✅ Inserted ${incomeData.length} income records`);
         } catch (e) {
-            console.log("⚠️  Income model insert skipped:", e.message);
+            console.log("⚠️  Income model insert failed/skipped:", e.message);
         }
     }
+
 
     console.log("\n🌾 Seeding complete! Farm is ready to explore.");
     await mongoose.disconnect();
