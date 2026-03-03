@@ -5,6 +5,7 @@ import { getPreferredUnit, acresToDisplay, shortLabel } from "../utils/areaUtils
 import UnitSelector from "../components/UnitSelector";
 
 import "./FarmDetails.css";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 // =========================================================
 // Auto-detect crop status based on today's date vs dates
@@ -28,6 +29,44 @@ function getEffectiveStatus(crop) {
   return { status: crop.status || "Growing", auto: false };
 }
 
+// ── CUSTOM TOOLTIP FOR PREMIUM UI ──
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const income = payload.find(p => p.dataKey === "income")?.value || 0;
+    const expense = payload.find(p => p.dataKey === "expense")?.value || 0;
+    const profit = income - expense;
+
+    return (
+      <div style={{
+        background: "#1e293b",
+        border: "1px solid #334155",
+        padding: "16px",
+        borderRadius: "12px",
+        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+        minWidth: "180px"
+      }}>
+        <p style={{ margin: "0 0 10px 0", fontWeights: "bold", fontSize: "1rem", color: "#f8fafc" }}>🌿 {label}</p>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+          <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Income:</span>
+          <span style={{ color: "#22c55e", fontWeight: "600", fontSize: "0.85rem" }}>₹{income.toLocaleString()}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+          <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Expense:</span>
+          <span style={{ color: "#ef4444", fontWeight: "600", fontSize: "0.85rem" }}>₹{expense.toLocaleString()}</span>
+        </div>
+        <div style={{ height: "1px", background: "#334155", margin: "8px 0" }} />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px" }}>
+          <span style={{ color: "#f1f5f9", fontSize: "0.9rem", fontWeight: "600" }}>Net Profit:</span>
+          <span style={{ color: profit >= 0 ? "#4ade80" : "#f87171", fontWeight: "bold", fontSize: "0.95rem" }}>
+            {profit >= 0 ? "+" : ""}₹{profit.toLocaleString()}
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 function FarmDetails() {
   const { farmId } = useParams();
   const navigate = useNavigate();
@@ -43,6 +82,7 @@ function FarmDetails() {
   // 🔹 Analytics State
   const [cropAnalytics, setCropAnalytics] = useState([]);
   const [analyticsYear, setAnalyticsYear] = useState(new Date().getFullYear());
+  const [showTable, setShowTable] = useState(false);
 
   // ================= FETCH FARM & ANALYTICS =================
   useEffect(() => {
@@ -434,45 +474,116 @@ function FarmDetails() {
 
       {/* ANNUAL CROP ANALYTICS SECTION */}
       <div className="card crop-analytics-card" style={{ marginTop: "20px", width: "100%" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3>📊 Annual Crop Profitability ({analyticsYear})</h3>
-          <select
-            value={analyticsYear}
-            onChange={(e) => setAnalyticsYear(Number(e.target.value))}
-            style={{ padding: "5px", borderRadius: "4px" }}
-          >
-            {[0, 1, 2, 3, 4].map(offset => {
-              const year = new Date().getFullYear() - offset;
-              return <option key={year} value={year}>{year}</option>
-            })}
-          </select>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <div>
+            <h3 style={{ margin: 0 }}>📊 Annual Crop Profitability ({analyticsYear})</h3>
+            <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#64748b" }}>Income vs Expense comparison per crop</p>
+          </div>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            {/* View Toggle */}
+            <div className="fi-toggle-group" style={{ margin: 0 }}>
+              <button
+                className={`fi-toggle-btn ${!showTable ? "active" : ""}`}
+                onClick={() => setShowTable(false)}
+                style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+              >📈 Chart</button>
+              <button
+                className={`fi-toggle-btn ${showTable ? "active" : ""}`}
+                onClick={() => setShowTable(true)}
+                style={{ padding: "6px 12px", fontSize: "0.8rem" }}
+              >📋 Table</button>
+            </div>
+
+            <select
+              value={analyticsYear}
+              onChange={(e) => setAnalyticsYear(Number(e.target.value))}
+              className="fi-select"
+              style={{ padding: "5px 10px", fontSize: "0.85rem" }}
+            >
+              {[0, 1, 2, 3, 4].map(offset => {
+                const year = new Date().getFullYear() - offset;
+                return <option key={year} value={year}>{year}</option>
+              })}
+            </select>
+          </div>
         </div>
 
         {cropAnalytics.length === 0 ? (
-          <p style={{ color: "#aaa" }}>No income or expenses recorded for this year.</p>
-        ) : (
-          <table style={{ width: "100%", marginTop: "15px", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #444", textAlign: "left" }}>
-                <th style={{ padding: "10px" }}>Crop / Category</th>
-                <th style={{ padding: "10px", color: "#4CAF50" }}>Income (₹)</th>
-                <th style={{ padding: "10px", color: "#e53935" }}>Expense (₹)</th>
-                <th style={{ padding: "10px" }}>Net Profit (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cropAnalytics.map((stat, idx) => (
-                <tr key={idx} style={{ borderBottom: "1px solid #333" }}>
-                  <td style={{ padding: "10px" }}><strong>{stat.cropName}</strong></td>
-                  <td style={{ padding: "10px", color: "#4CAF50" }}>{stat.income}</td>
-                  <td style={{ padding: "10px", color: "#e53935" }}>{stat.expense}</td>
-                  <td style={{ padding: "10px", color: stat.profit >= 0 ? "#4CAF50" : "#e53935", fontWeight: "bold" }}>
-                    {stat.profit >= 0 ? "+" : ""}{stat.profit}
-                  </td>
+          <div style={{ padding: "40px", textAlign: "center", color: "#64748b", background: "#0f172a", borderRadius: "12px", border: "1px dashed #334155" }}>
+            <p style={{ margin: 0 }}>📭 No income or expenses recorded for <strong>{analyticsYear}</strong>.</p>
+          </div>
+        ) : showTable ? (
+          <div className="fi-table-wrap" style={{ animation: "fiSlideDown 0.3s ease-out" }}>
+            <table className="fi-table">
+              <thead>
+                <tr>
+                  <th>Crop / Category</th>
+                  <th style={{ color: "#4ade80" }}>Income (₹)</th>
+                  <th style={{ color: "#f87171" }}>Expense (₹)</th>
+                  <th>Net Profit (₹)</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {cropAnalytics.map((stat, idx) => (
+                  <tr key={idx}>
+                    <td><strong>{stat.cropName.charAt(0).toUpperCase() + stat.cropName.slice(1)}</strong></td>
+                    <td className="fi-amount">₹{stat.income.toLocaleString()}</td>
+                    <td style={{ color: "#f87171" }}>₹{stat.expense.toLocaleString()}</td>
+                    <td style={{ color: stat.profit >= 0 ? "#4ade80" : "#f87171", fontWeight: "bold" }}>
+                      {stat.profit >= 0 ? "+" : ""}₹{stat.profit.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ height: "350px", width: "100%", marginTop: "10px", animation: "fiSlideDown 0.3s ease-out" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={cropAnalytics.map(s => ({ ...s, name: s.cropName.charAt(0).toUpperCase() + s.cropName.slice(1) }))}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                barGap={8}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={10}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `₹${value}`}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1e293b', opacity: 0.4 }} />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }}
+                />
+                <Bar
+                  dataKey="income"
+                  name="Income"
+                  fill="#22c55e"
+                  radius={[4, 4, 0, 0]}
+                  barSize={30}
+                />
+                <Bar
+                  dataKey="expense"
+                  name="Expense"
+                  fill="#ef4444"
+                  radius={[4, 4, 0, 0]}
+                  barSize={30}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
 

@@ -391,3 +391,99 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
     cursor: pointer;
 }
+
+/* ===== SHARED UTILITIES (from FarmIncome) ===== */
+.fi-toggle-group {
+    display: flex;
+    background: #0f172a;
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.fi-toggle-btn {
+    background: transparent;
+    color: #64748b;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.fi-toggle-btn.active {
+    background: #22c55e;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.fi-toggle-btn:not(.active):hover {
+    color: #e2e8f0;
+    background: #1e293b;
+}
+
+.fi-select {
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 7px;
+    padding: 7px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.fi-select:focus {
+    border-color: #22c55e;
+}
+
+.fi-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    background: #111827;
+}
+
+.fi-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.fi-table thead tr {
+    background: #0f172a;
+    border-bottom: 1px solid #334155;
+}
+
+.fi-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+}
+
+.fi-table tbody tr {
+    border-bottom: 1px solid #1e293b;
+    transition: background 0.15s;
+}
+
+.fi-table tbody tr:hover {
+    background: #1e293b;
+}
+
+.fi-table td {
+    padding: 14px 16px;
+    color: #cbd5e1;
+}
+
+.fi-amount {
+    font-weight: 700;
+    color: #4ade80;
+}
