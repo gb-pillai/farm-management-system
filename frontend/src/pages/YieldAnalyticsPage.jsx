@@ -1,27 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Line } from "react-chartjs-2";
 import "./YieldAnalyticsPage.css";
-
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend
-);
 
 export default function YieldAnalyticsPage() {
   const { id } = useParams();
@@ -33,14 +13,49 @@ export default function YieldAnalyticsPage() {
     area: "",
   });
 
+  const [areaUnit, setAreaUnit] = useState("hectare");
   const [weather, setWeather] = useState(null);
+  const [selectedSeason, setSelectedSeason] = useState("");
   const [predictedYield, setPredictedYield] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [farmLoading, setFarmLoading] = useState(true);
-  
 
-  // ✅ Load Farm + History
+  // ---------------------------
+  // SEASONAL AVERAGE DATA
+  // ---------------------------
+  const seasonalAverages = {
+    Kharif: { temp: 28, humidity: 90 },
+    Rabi: { temp: 25, humidity: 80 },
+    Summer: { temp: 32, humidity: 75 },
+    Winter: { temp: 24, humidity: 85 },
+    Autumn: { temp: 27, humidity: 82 },
+    "Whole Year": { temp: 27, humidity: 83 },
+  };
+
+  // ---------------------------
+  // Convert Area to Hectare
+  // ---------------------------
+  const convertToHectare = (area, unit) => {
+    let value = Number(area);
+    if (unit === "acre") return value * 0.404686;
+    if (unit === "cent") return value * 0.00404686;
+    return value;
+  };
+
+  // ---------------------------
+  // Get Current Season
+  // ---------------------------
+  const getCurrentSeason = () => {
+    const month = new Date().getMonth() + 1;
+    if (month >= 6 && month <= 9) return "Kharif";
+    if (month >= 10 || month <= 3) return "Rabi";
+    return "Summer";
+  };
+
+  // ---------------------------
+  // Load Farm + History
+  // ---------------------------
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -55,6 +70,8 @@ export default function YieldAnalyticsPage() {
             area: farmRes.data.area || "",
           });
         }
+
+        setSelectedSeason(getCurrentSeason());
 
         const historyRes = await axios.get(
           `http://localhost:5000/api/yield/farm/${id}`
@@ -71,14 +88,13 @@ export default function YieldAnalyticsPage() {
     loadData();
   }, [id]);
 
-  // ✅ Weather API
+  // ---------------------------
+  // Fetch Live Weather
+  // ---------------------------
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        if (!farm?.district) return;
-
-        // ✅ Only fetch when district length > 3
-        if (farm.district.length < 4) return;
+        if (!farm?.district || farm.district.length < 3) return;
 
         const res = await axios.get(
           `https://api.openweathermap.org/data/2.5/weather?q=${farm.district}&units=metric&appid=${import.meta.env.VITE_WEATHER_API_KEY}`
@@ -88,28 +104,17 @@ export default function YieldAnalyticsPage() {
           temp: res.data.main.temp,
           humidity: res.data.main.humidity,
         });
-
       } catch (err) {
-        // ✅ Silently ignore 404 while typing
-        if (err.response?.status !== 404) {
-          console.error("Weather fetch error:", err);
-        }
+        console.error("Weather fetch error:", err);
       }
     };
 
-  fetchWeather();
-}, [farm.district]);
+    fetchWeather();
+  }, [farm.district]);
 
-  // ✅ Season must match ML dataset
-  const getModelSeason = () => {
-    const month = new Date().getMonth() + 1;
-
-    if (month >= 6 && month <= 9) return "Kharif";     // Monsoon
-    if (month >= 10 || month <= 3) return "Rabi";     // Winter
-    return "Whole Year";                               // April–May fallback
-  };
-
-  // ✅ Predict Yield
+  // ---------------------------
+  // Handle Prediction
+  // ---------------------------
   const handlePredict = async () => {
     if (!farm.cropType || !farm.district || !farm.area) {
       alert("Please fill Crop, District and Area before predicting.");
@@ -119,21 +124,36 @@ export default function YieldAnalyticsPage() {
     try {
       setLoading(true);
 
+      const areaInHectare = convertToHectare(farm.area, areaUnit);
+      const currentSeason = getCurrentSeason();
+
+      let temperature;
+      let humidity;
+
+      if (selectedSeason === currentSeason && weather) {
+        temperature = weather.temp;
+        humidity = weather.humidity;
+      } else {
+        temperature = seasonalAverages[selectedSeason]?.temp;
+        humidity = seasonalAverages[selectedSeason]?.humidity;
+      }
+
       const res = await axios.post(
         "http://localhost:5000/api/yield/predict",
         {
           farmId: id,
           crop: farm.cropType,
           district: farm.district.toUpperCase(),
-          season: getModelSeason(),
-          area: Number(farm.area),
+          season: selectedSeason,
+          area: areaInHectare,
+          temperature,
+          humidity,
           year: new Date().getFullYear(),
         }
       );
 
       setPredictedYield(res.data.predictedYield);
 
-      // Refresh history
       const historyRes = await axios.get(
         `http://localhost:5000/api/yield/farm/${id}`
       );
@@ -141,132 +161,155 @@ export default function YieldAnalyticsPage() {
       setHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
     } catch (err) {
       console.error("Prediction error:", err);
-      alert("Prediction failed. Check backend or Python script.");
+      alert("Prediction failed. Check backend.");
     } finally {
       setLoading(false);
     }
   };
 
-  const chartData = {
-    labels: history.map((_, i) => `Prediction ${i + 1}`),
-    datasets: [
-      {
-        label: "Yield (kg)",
-        data: history.map((item) => item.predictedYield),
-        borderColor: "green",
-        backgroundColor: "rgba(0,128,0,0.2)",
-        tension: 0.3,
-      },
-    ],
-  };
-
   return (
-  <div className="yield-container">
-    
-    <div className="content-wrapper">
-      <button className="back-btn" onClick={() => navigate(`/farm/${id}`)}>
-        ⬅ Back to Farms
-      </button>
-      <h2 className="yield-title">Yield Analytics</h2>
+    <div className="yield-container">
+      <div className="content-wrapper">
 
-      {farmLoading && <p>Loading farm details...</p>}
+        <button className="back-btn" onClick={() => navigate(`/farm/${id}`)}>
+          ⬅ Back to Farms
+        </button>
 
-      {!farmLoading && (
-        <div className="card prediction-card">
+        <h2 className="yield-title">Yield Analytics</h2>
 
-          <div>
-            <label>Crop</label>
-            <input
-              type="text"
-              value={farm.cropType}
-              onChange={(e) =>
-                setFarm({ ...farm, cropType: e.target.value })
-              }
-            />
-          </div>
+        {farmLoading && <p>Loading farm details...</p>}
 
-          <div>
-            <label>District</label>
-            <select
-              value={farm.district}
-              onChange={(e) =>
-                setFarm({ ...farm, district: e.target.value })
-              }
-              required
-            >
-              <option value="">Select District</option>
-              <option value="Thiruvananthapuram">Thiruvananthapuram</option>
-              <option value="Kollam">Kollam</option>
-              <option value="Pathanamthitta">Pathanamthitta</option>
-              <option value="Alappuzha">Alappuzha</option>
-              <option value="Kottayam">Kottayam</option>
-              <option value="Idukki">Idukki</option>
-              <option value="Ernakulam">Ernakulam</option>
-              <option value="Thrissur">Thrissur</option>
-              <option value="Palakkad">Palakkad</option>
-              <option value="Malappuram">Malappuram</option>
-              <option value="Kozhikode">Kozhikode</option>
-              <option value="Wayanad">Wayanad</option>
-              <option value="Kannur">Kannur</option>
-              <option value="Kasaragod">Kasaragod</option>
-            </select>
-          </div>
+        {!farmLoading && (
+          <div className="card prediction-card">
 
-          <div>
-            <label>Area (hectares)</label>
-            <input
-              type="number"
-              value={farm.area}
-              onChange={(e) =>
-                setFarm({ ...farm, area: e.target.value })
-              }
-            />
-          </div>
-
-          {weather && (
-            <div className="weather-info">
-              <p><strong>Season:</strong> {getModelSeason()}</p>
-              <p><strong>Temperature:</strong> {weather.temp}°C</p>
-              <p><strong>Humidity:</strong> {weather.humidity}%</p>
+            <div>
+              <label>Crop</label>
+              <input
+                type="text"
+                value={farm.cropType}
+                onChange={(e) =>
+                  setFarm({ ...farm, cropType: e.target.value })
+                }
+              />
             </div>
-          )}
 
-        </div>
-      )}
+            <div>
+              <label>District</label>
+              <select
+                value={farm.district}
+                onChange={(e) =>
+                  setFarm({ ...farm, district: e.target.value })
+                }
+              >
+                <option value="">Select District</option>
+                <option value="Kasaragod">Kasaragod</option>
+                <option value="Kannur">Kannur</option>
+                <option value="Wayanad">Wayanad</option>
+                <option value="Kozhikode">Kozhikode</option>
+                <option value="Malappuram">Malappuram</option>
+                <option value="Palakkad">Palakkad</option>
+                <option value="Thrissur">Thrissur</option>
+                <option value="Ernakulam">Ernakulam</option>
+                <option value="Idukki">Idukki</option>
+                <option value="Kottayam">Kottayam</option>
+                <option value="Alappuzha">Alappuzha</option>
+                <option value="Pathanamthitta">Pathanamthitta</option>
+                <option value="Kollam">Kollam</option>
+                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+              </select>
+            </div>
 
-      <button onClick={handlePredict} disabled={loading}>
-        {loading ? "Predicting..." : "Predict Yield"}
-      </button>
+            <div>
+              <label>Area</label>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input
+                  type="number"
+                  value={farm.area}
+                  onChange={(e) =>
+                    setFarm({ ...farm, area: e.target.value })
+                  }
+                />
+                <select
+                  value={areaUnit}
+                  onChange={(e) => setAreaUnit(e.target.value)}
+                >
+                  <option value="hectare">Hectare</option>
+                  <option value="acre">Acre</option>
+                  <option value="cent">Cent</option>
+                </select>
+              </div>
+            </div>
 
-      {predictedYield !== null && (
-        <div className="card result-card">
-          Latest Predicted Yield:{" "}
-          {Number(predictedYield).toLocaleString(undefined, {
-            maximumFractionDigits: 2,
-          })} kg
-        </div>
-      )}
+            <div>
+              <label>Season</label>
+              <select
+                value={selectedSeason}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+              >
+                <option value="Autumn">Autumn</option>
+                <option value="Kharif">Kharif</option>
+                <option value="Rabi">Rabi</option>
+                <option value="Summer">Summer</option>
+                <option value="Winter">Winter</option>
+              </select>
+            </div>
 
-      {history.length > 0 && (
-        <>
-          <div className="chart-section">
-            <Line data={chartData} />
+            {(weather || seasonalAverages[selectedSeason]) && (
+              <div className="weather-info">
+                <p><strong>Season:</strong> {selectedSeason}</p>
+                <p>
+                  <strong>Temperature:</strong>{" "}
+                  {selectedSeason === getCurrentSeason() && weather
+                    ? weather.temp
+                    : seasonalAverages[selectedSeason]?.temp}°C
+                </p>
+                <p>
+                  <strong>Humidity:</strong>{" "}
+                  {selectedSeason === getCurrentSeason() && weather
+                    ? weather.humidity
+                    : seasonalAverages[selectedSeason]?.humidity}%
+                </p>
+              </div>
+            )}
+
           </div>
+        )}
 
+        <button onClick={handlePredict} disabled={loading}>
+          {loading ? "Predicting..." : "Predict Yield"}
+        </button>
+
+        {predictedYield !== null && (
+          <div className="card result-card">
+            Latest Predicted Yield:{" "}
+            {Number(predictedYield).toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })} kg
+          </div>
+        )}
+
+        {history.length > 0 && (
           <div className="yield-table-container">
+            <h3>Prediction History</h3>
             <table className="yield-table">
               <thead>
                 <tr>
                   <th>Date</th>
+                  <th>Crop</th>
+                  <th>District</th>
+                  <th>Area (ha)</th>
+                  <th>Season</th>
                   <th>Yield (kg)</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map((item) => (
                   <tr key={item._id}>
-                    <td>
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </td>
+                    <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                    <td>{item.cropType}</td>
+                    <td>{item.district}</td>
+                    <td>{Number(item.area).toFixed(3)}</td>
+                    <td>{item.season}</td>
                     <td>
                       {Number(item.predictedYield).toLocaleString(undefined, {
                         maximumFractionDigits: 2,
@@ -277,10 +320,9 @@ export default function YieldAnalyticsPage() {
               </tbody>
             </table>
           </div>
-        </>
-      )}
+        )}
 
+      </div>
     </div>
-  </div>
-);
+  );
 }

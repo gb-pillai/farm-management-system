@@ -8,7 +8,6 @@ router.post("/predict", async (req, res) => {
   try {
     let { farmId, crop, district, season, area, year } = req.body;
 
-    // ✅ Normalize input before sending to Python
     crop = crop?.trim();
     district = district?.trim();
     season = season?.trim();
@@ -21,15 +20,13 @@ router.post("/predict", async (req, res) => {
       });
     }
 
-    // Capitalize crop properly (Rice, Wheat, Coconut)
+    // Match model format
     crop =
       crop.charAt(0).toUpperCase() +
       crop.slice(1).toLowerCase();
 
-    // District uppercase (KANNUR)
     district = district.toUpperCase();
 
-    // Season title case (Kharif / Rabi / Whole Year)
     season =
       season.charAt(0).toUpperCase() +
       season.slice(1).toLowerCase();
@@ -56,39 +53,37 @@ router.post("/predict", async (req, res) => {
       errorOutput += data.toString();
     });
 
-    python.on("close", async (code) => {
-  console.log("Python Raw Output:", result);
-  console.log("Python Error Output:", errorOutput);
+    python.on("close", async () => {
+      console.log("Python Raw Output:", result);
+      console.log("Python Error Output:", errorOutput);
 
-  const predictedValue = Number(result.trim());
+      const predictedValue = Number(result.trim());
 
-  if (isNaN(predictedValue)) {
-    return res.status(400).json({
-      error: "Invalid prediction value from Python",
-      rawOutput: result,
-      pythonError: errorOutput
+      if (isNaN(predictedValue)) {
+        return res.status(400).json({
+          error: result || "Prediction failed"
+        });
+      }
+
+      try {
+        const saved = await YieldPrediction.create({
+          farmId,
+          cropType: crop,
+          district,
+          season,
+          area,
+          year,
+          predictedYield: predictedValue,
+        });
+
+        return res.json(saved);
+      } catch (dbError) {
+        console.error("Database Save Error:", dbError);
+        return res.status(500).json({
+          error: "Failed to save prediction"
+        });
+      }
     });
-  }
-
-  try {
-    const saved = await YieldPrediction.create({
-      farmId,
-      cropType: crop,
-      district,
-      season,
-      area,
-      year,
-      predictedYield: predictedValue,
-    });
-
-    return res.json(saved);
-  } catch (dbError) {
-    console.error("Database Save Error:", dbError);
-    return res.status(500).json({
-      error: "Failed to save prediction"
-    });
-  }
-});
 
   } catch (error) {
     console.error("Server Error:", error);
