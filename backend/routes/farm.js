@@ -141,7 +141,7 @@ router.get("/:id", async (req, res) => {
 router.post("/:farmId/crop", async (req, res) => {
   try {
     const { farmId } = req.params;
-    const { name, season, sownDate, expectedHarvestDate, status, allocatedArea } = req.body;
+    const { name, season, sownDate, expectedHarvestDate, status, allocatedArea, removalDate } = req.body;
 
     if (!name || !season) {
       return res.status(400).json({ success: false, message: "Crop name and season are required" });
@@ -150,46 +150,60 @@ router.post("/:farmId/crop", async (req, res) => {
     const farm = await Farm.findById(farmId);
     if (!farm) return res.status(404).json({ success: false, message: "Farm not found" });
 
-    // Calculate land used by crops whose date range OVERLAPS with the new crop's dates
-    // Two intervals overlap if: newStart <= existingEnd AND newEnd >= existingStart
-    const newStart = sownDate ? new Date(sownDate) : null;
-    const newEnd = expectedHarvestDate ? new Date(expectedHarvestDate) : null;
+    // ─────────────────────────────────────────────────────────────
+    // BYPASS: If the new crop is already "Removed"/"Harvested" with
+    // a past removal date, it is a historical record — no land is
+    // needed today, so skip the availability check entirely.
+    // ─────────────────────────────────────────────────────────────
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const isHistoricalRecord =
+      (status === "Removed" || status === "Harvested") &&
+      removalDate &&
+      new Date(removalDate) < today;
 
-    const usedArea = farm.crops.reduce((sum, existing) => {
-      if (!existing.allocatedArea) return sum;
+    if (!isHistoricalRecord) {
+      // Calculate land used by crops whose date range OVERLAPS with the new crop's dates
+      const newStart = sownDate ? new Date(sownDate) : null;
+      const newEnd = removalDate
+        ? new Date(removalDate)
+        : (expectedHarvestDate ? new Date(expectedHarvestDate) : null);
 
-      const exStart = existing.sownDate ? new Date(existing.sownDate) : null;
-      let exEnd = existing.expectedHarvestDate ? new Date(existing.expectedHarvestDate) : null;
+      const usedArea = farm.crops.reduce((sum, existing) => {
+        if (!existing.allocatedArea) return sum;
 
-      // Handle custom statuses providing earlier end dates
-      if ((existing.status === "Removed" && existing.removalDate) ||
-        (existing.status === "Harvested" && existing.removalDate)) {
-        exEnd = new Date(existing.removalDate);
+        const exStart = existing.sownDate ? new Date(existing.sownDate) : null;
+        let exEnd = existing.expectedHarvestDate ? new Date(existing.expectedHarvestDate) : null;
+
+        // Use removalDate as end for Removed/Harvested crops
+        if (existing.removalDate &&
+          (existing.status === "Removed" || existing.status === "Harvested")) {
+          exEnd = new Date(existing.removalDate);
+        }
+
+        // Default behaviour if there are missing dates
+        if (!newStart && !newEnd) return sum + existing.allocatedArea;
+        if (!exStart && !exEnd) return sum + existing.allocatedArea;
+
+        // Calculate intersection
+        const overlapStart = !newStart ? exStart : (!exStart ? newStart : new Date(Math.max(newStart, exStart)));
+        const overlapEnd = !newEnd ? exEnd : (!exEnd ? newEnd : new Date(Math.min(newEnd, exEnd)));
+
+        const overlaps = !overlapEnd || overlapStart <= overlapEnd;
+        return overlaps ? sum + existing.allocatedArea : sum;
+      }, 0);
+
+      const availableArea = farm.areaInAcres - usedArea;
+      const requestedArea = parseFloat(allocatedArea) || 0;
+
+      if (requestedArea > availableArea) {
+        return res.status(400).json({
+          success: false,
+          message: `Not enough land during ${newStart ? newStart.toLocaleDateString() : '?'} – ${newEnd ? newEnd.toLocaleDateString() : '?'}! Available: ${availableArea.toFixed(2)} acres, Requested: ${requestedArea} acres`
+        });
       }
-
-      // Default behaviour if there are missing dates
-      if (!newStart && !newEnd) return sum + existing.allocatedArea;
-      if (!exStart && !exEnd) return sum + existing.allocatedArea;
-
-      // Calculate intersection
-      const overlapStart = !newStart ? exStart : (!exStart ? newStart : new Date(Math.max(newStart, exStart)));
-      const overlapEnd = !newEnd ? exEnd : (!exEnd ? newEnd : new Date(Math.min(newEnd, exEnd)));
-
-      const overlaps = !overlapEnd || overlapStart <= overlapEnd;
-      return overlaps ? sum + existing.allocatedArea : sum;
-    }, 0);
-
-    const availableArea = farm.areaInAcres - usedArea;
-    const requestedArea = parseFloat(allocatedArea) || 0;
-
-    if (requestedArea > availableArea) {
-      return res.status(400).json({
-        success: false,
-        message: `Not enough land during ${newStart ? newStart.toLocaleDateString() : '?'} – ${newEnd ? newEnd.toLocaleDateString() : '?'}! Available: ${availableArea.toFixed(2)} acres, Requested: ${requestedArea} acres`
-      });
     }
 
-    farm.crops.push({ name, season, sownDate, expectedHarvestDate, allocatedArea: requestedArea, status: status || "Growing" });
+    farm.crops.push({ name, season, sownDate, expectedHarvestDate, removalDate: removalDate || undefined, allocatedArea: parseFloat(allocatedArea) || 0, status: status || "Growing" });
     await farm.save();
 
     res.json({ success: true, message: "Crop added", data: farm });
@@ -224,7 +238,7 @@ router.put("/:farmId", async (req, res) => {
 router.put("/:farmId/crop/:cropId", async (req, res) => {
   try {
     const { farmId, cropId } = req.params;
-    const { name, season, sownDate, expectedHarvestDate, status, allocatedArea } = req.body;
+    const { name, season, sownDate, expectedHarvestDate, status, allocatedArea, removalDate } = req.body;
 
     const farm = await Farm.findById(farmId);
     if (!farm) return res.status(404).json({ success: false, message: "Farm not found" });
@@ -238,6 +252,10 @@ router.put("/:farmId/crop/:cropId", async (req, res) => {
     if (expectedHarvestDate) crop.expectedHarvestDate = expectedHarvestDate;
     if (status) crop.status = status;
     if (allocatedArea !== undefined) crop.allocatedArea = parseFloat(allocatedArea) || 0;
+
+    // Explicitly set or clear removal date when missing if its not actively Growing or Planned.
+    if (removalDate) crop.removalDate = removalDate;
+    else if (status === "Growing" || status === "Planned") crop.removalDate = undefined;
 
     await farm.save();
     res.json({ success: true, message: "Crop updated", data: farm });

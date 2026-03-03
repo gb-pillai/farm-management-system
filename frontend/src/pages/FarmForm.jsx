@@ -10,8 +10,7 @@ function FarmForm() {
   const [crops, setCrops] = useState([{ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "", status: "Growing", removalDate: "" }]);
   const [areaInAcres, setAreaInAcres] = useState("");
   const [season, setSeason] = useState("");
-  const [yieldAmount, setYieldAmount] = useState("");
-  const [profit, setProfit] = useState("");
+
   const [message, setMessage] = useState("");
   const [unit, setUnit] = useState(getPreferredUnit());
   const navigate = useNavigate();
@@ -97,9 +96,7 @@ function FarmForm() {
           location,
           crops: crops.map(c => ({ ...c, allocatedArea: displayToAcres(c.allocatedArea, unit) })),
           areaInAcres: displayToAcres(areaInAcres, unit),
-          season: calculatedSeason,
-          yieldAmount,
-          profit
+          season: calculatedSeason
         })
       });
 
@@ -112,8 +109,6 @@ function FarmForm() {
         setCrops([{ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "", status: "Growing", removalDate: "" }]);
         setAreaInAcres("");
         setSeason("");
-        setYieldAmount("");
-        setProfit("");
       } else {
         setMessage(data.message || "Failed to add farm");
       }
@@ -336,19 +331,7 @@ function FarmForm() {
           ➕ Add Another Crop
         </button>
 
-        <input
-          type="number"
-          placeholder="Yield Amount (kg)"
-          value={yieldAmount}
-          onChange={(e) => setYieldAmount(e.target.value)}
-        />
 
-        <input
-          type="number"
-          placeholder="Profit (₹)"
-          value={profit}
-          onChange={(e) => setProfit(e.target.value)}
-        />
 
         <button type="submit">🌾 Add Farm</button>
       </form>

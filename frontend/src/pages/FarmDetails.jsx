@@ -245,7 +245,7 @@ function FarmDetails() {
                     <div style={{ display: "flex", gap: "6px" }}>
                       <button onClick={() => navigate(`/farm/${farm._id}/add-expense?crop=${encodeURIComponent(crop.name)}`)}
                         style={{ padding: "3px 10px", backgroundColor: "#ff9800", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.8rem", marginRight: "10px" }} title="Add Expense for this Crop">➕ Expense</button>
-                      <button onClick={() => { setEditingCropId(crop._id || idx); setEditForm({ name: crop.name || "", season: crop.season || "", sownDate: crop.sownDate || "", expectedHarvestDate: crop.expectedHarvestDate || "", status: crop.status || "Growing", allocatedArea: crop.allocatedArea || "", removalDate: crop.removalDate || "" }); }}
+                      <button onClick={() => { setEditingCropId(crop._id || idx); setEditForm({ name: crop.name || "", season: crop.season || "", sownDate: crop.sownDate ? new Date(crop.sownDate).toISOString().substring(0, 10) : "", expectedHarvestDate: crop.expectedHarvestDate ? new Date(crop.expectedHarvestDate).toISOString().substring(0, 10) : "", status: crop.status || "Growing", allocatedArea: crop.allocatedArea || "", removalDate: crop.removalDate ? new Date(crop.removalDate).toISOString().substring(0, 10) : "" }); }}
                         style={{ padding: "3px 10px", backgroundColor: "#1976d2", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.8rem" }}>✏️</button>
                       <button onClick={async () => {
                         if (!window.confirm(`Remove "${crop.name}" from this farm?`)) return;

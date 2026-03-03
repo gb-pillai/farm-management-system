@@ -151,35 +151,65 @@ function FarmEditForm() {
 
             {/* Live land availability badge — recalculates based on selected dates */}
             {farmData && (() => {
-                if (newStart && newEnd && exStart && exEnd) {
-                    // Both have dates: use temporal overlap check
-                    const overlaps = newStart <= exEnd && newEnd >= exStart;
-                    return overlaps ? sum + c.allocatedArea : sum;
-                }
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const newStart = newCrop.sownDate ? new Date(newCrop.sownDate) : null;
+                // For perennial crops, use removalDate as end; for others use expectedHarvestDate
+                const newEnd = newCrop.removalDate
+                    ? new Date(newCrop.removalDate)
+                    : (newCrop.expectedHarvestDate ? new Date(newCrop.expectedHarvestDate) : null);
 
-                // Fallback: only count if crop is currently active (today within range)
-                if (exStart && exEnd) {
-                    const isActive = today >= exStart && today <= exEnd;
-                    return isActive ? sum + c.allocatedArea : sum;
-                }
+                const usedArea = (farmData.crops || []).reduce((sum, c) => {
+                    if (!c.allocatedArea) return sum;
 
-                // No dates at all: count it (safe default)
-                return sum + c.allocatedArea;
-            }, 0);
-            const available = Math.max(0, (farmData.areaInAcres || 0) - usedArea);
-            const color = available === 0 ? "#e53935" : available < 1 ? "#ff9800" : "#4CAF50";
-            const dateLabel = newStart && newEnd
-            ? `during ${newStart.toLocaleDateString()} – ${newEnd.toLocaleDateString()}`
-            : "(showing currently active land usage)";
-            return (
-            <div style={{ padding: "10px 14px", backgroundColor: "#1b2a1b", borderRadius: "8px", marginBottom: "16px", fontSize: "0.9rem", color: "#eee" }}>
-                🗺️ <strong>Farm Area:</strong> {acresToDisplay(farmData.areaInAcres, unit).toFixed(2)} {shortLabel(unit)} &nbsp;|&nbsp;
-                <strong style={{ color: "#aaa" }}>In Use: {acresToDisplay(usedArea, unit).toFixed(2)} {shortLabel(unit)}</strong> &nbsp;|&nbsp;
-                <strong style={{ color }}>Available: {acresToDisplay(available, unit).toFixed(2)} {shortLabel(unit)}</strong>
-                <div style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "4px" }}>📅 {dateLabel}</div>
-                {available === 0 && <span style={{ color: "#e53935" }}>⚠️ No land free{newStart && newEnd ? " during this period" : " right now"}!</span>}
-            </div>
-            );
+                    // Explicitly removed/harvested crops don't use land
+                    if (c.status === "Removed" || c.status === "Harvested") return sum;
+
+                    const exStart = c.sownDate ? new Date(c.sownDate) : null;
+                    // Use removalDate as the effective end if present
+                    let exEnd = c.removalDate
+                        ? new Date(c.removalDate)
+                        : (c.expectedHarvestDate ? new Date(c.expectedHarvestDate) : null);
+
+                    // If exEnd is in the past (crop ended), skip it
+                    if (exEnd && today > exEnd) return sum;
+
+                    if (newStart && newEnd) {
+                        // Both new crop and existing have dates → temporal overlap check
+                        if (exStart && exEnd) {
+                            const overlaps = newStart <= exEnd && newEnd >= exStart;
+                            return overlaps ? sum + c.allocatedArea : sum;
+                        }
+                        // Existing has no end (perennial, still growing) → always overlaps
+                        if (exStart && !exEnd) {
+                            return newEnd >= exStart ? sum + c.allocatedArea : sum;
+                        }
+                    }
+
+                    // Fallback: check if currently active today
+                    if (exStart && exEnd) {
+                        return (today >= exStart && today <= exEnd) ? sum + c.allocatedArea : sum;
+                    }
+                    if (exStart && !exEnd) {
+                        return today >= exStart ? sum + c.allocatedArea : sum;
+                    }
+                    // No date info — count it (safe default)
+                    return sum + c.allocatedArea;
+                }, 0);
+
+                const available = Math.max(0, (farmData.areaInAcres || 0) - usedArea);
+                const color = available === 0 ? "#e53935" : available < 1 ? "#ff9800" : "#4CAF50";
+                const dateLabel = newStart && newEnd
+                    ? `during ${newStart.toLocaleDateString()} – ${newEnd.toLocaleDateString()}`
+                    : "(showing currently active land usage)";
+                return (
+                    <div style={{ padding: "10px 14px", backgroundColor: "#1b2a1b", borderRadius: "8px", marginBottom: "16px", fontSize: "0.9rem", color: "#eee" }}>
+                        🗺️ <strong>Farm Area:</strong> {acresToDisplay(farmData.areaInAcres, unit).toFixed(2)} {shortLabel(unit)} &nbsp;|&nbsp;
+                        <strong style={{ color: "#aaa" }}>In Use: {acresToDisplay(usedArea, unit).toFixed(2)} {shortLabel(unit)}</strong> &nbsp;|&nbsp;
+                        <strong style={{ color }}>Available: {acresToDisplay(available, unit).toFixed(2)} {shortLabel(unit)}</strong>
+                        <div style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "4px" }}>📅 {dateLabel}</div>
+                        {available === 0 && <span style={{ color: "#e53935" }}>⚠️ No land free{newStart && newEnd ? " during this period" : " right now"}!</span>}
+                    </div>
+                );
             })()}
 
             <form className="farm-form" onSubmit={handleAddCrop}>
