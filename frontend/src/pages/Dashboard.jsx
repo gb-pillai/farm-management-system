@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getPreferredUnit, acresToDisplay, shortLabel, formatCropName } from "../utils/areaUtils";
 import { useNavigate } from "react-router-dom";
 import FertilizerStatusChart from "../components/charts/FertilizerStatusChart";
 import ProfitPerFarmChart from "../components/charts/ProfitPerFarmChart";
@@ -212,7 +213,9 @@ function Dashboard() {
                 >
                   <h4>{farm.farmName}</h4>
                   <p style={{ fontSize: "0.8rem", color: "#8fbc8f", margin: "2px 0 6px" }}>📍 {farm.location}</p>
-                  <p>{farm.crops && farm.crops.length > 0 ? farm.crops.map(c => c.name || c).join(", ") : farm.cropName}</p>
+                  <p>{farm.crops && farm.crops.length > 0
+                    ? farm.crops.map(c => formatCropName(c)).join(", ")
+                    : formatCropName(farm.cropName)}</p>
                   <span className="view-link">View →</span>
                 </div>
 

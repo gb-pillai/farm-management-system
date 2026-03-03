@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { formatCropName } from "../utils/areaUtils";
 import axios from "axios";
 import "./FarmIncome.css";
 
@@ -225,7 +226,7 @@ function FarmIncome() {
               return (
                 <div key={cropName} className="fi-crop-card">
                   <div className="fi-crop-header">
-                    <span className="fi-crop-name">🌱 {cropName.charAt(0).toUpperCase() + cropName.slice(1)}</span>
+                    <span className="fi-crop-name">🌱 {formatCropName(cropName)}</span>
                     <div className="fi-crop-stats">
                       <span className="fi-crop-income">Income: ₹ {cropTotal.toLocaleString()}</span>
                       {cropExpense > 0 && <span className="fi-crop-expense">Exp: ₹ {cropExpense.toLocaleString()}</span>}

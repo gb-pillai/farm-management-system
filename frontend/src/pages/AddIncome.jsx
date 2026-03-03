@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { formatCropName } from "../utils/areaUtils";
 import "./AddIncome.css";
 
 const AddIncome = () => {
@@ -92,7 +93,7 @@ const AddIncome = () => {
             style={{ width: "100%", padding: "10px", marginBottom: "15px", borderRadius: "5px", border: "1px solid #ccc" }}
           >
             {farmCrops.map((crop) => (
-              <option key={crop} value={crop}>{crop}</option>
+              <option key={crop} value={crop}>{formatCropName(crop)}</option>
             ))}
           </select>
         ) : (

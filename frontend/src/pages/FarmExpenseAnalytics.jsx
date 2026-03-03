@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { formatCropName } from "../utils/areaUtils";
 import "./FarmExpenseAnalytics.css";
 import CategoryExpenseBarChart from "../components/charts/CategoryExpenseBarChart";
 
@@ -242,7 +243,7 @@ const FarmExpenseAnalytics = () => {
               return (
                 <div key={cropName} className="fea-crop-card">
                   <div className="fea-crop-header">
-                    <span className="fea-crop-name">🌱 {cropName.charAt(0).toUpperCase() + cropName.slice(1)}</span>
+                    <span className="fea-crop-name">🌱 {formatCropName(cropName)}</span>
                     <span className="fea-crop-total">Total: ₹ {cropTotal.toLocaleString()}</span>
                   </div>
                   <div className="fea-table-wrap">

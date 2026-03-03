@@ -51,3 +51,16 @@ export function shortLabel(unitKey) {
     const map = { acres: "ac", cents: "ct", hectares: "ha", sqm: "m²", sqft: "ft²" };
     return map[unitKey] || unitKey;
 }
+
+/** Capitalize and format crop names (handling underscores) */
+export function formatCropName(name) {
+    if (!name) return "";
+    // If it's a crop object, extract the name
+    const cropName = typeof name === 'object' ? (name.name || "") : name;
+    if (!cropName) return "";
+
+    return cropName
+        .split(/[_\s]+/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+}

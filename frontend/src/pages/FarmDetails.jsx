@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { useParams, useNavigate } from "react-router-dom";
-import { getPreferredUnit, acresToDisplay, shortLabel } from "../utils/areaUtils";
+import { getPreferredUnit, acresToDisplay, shortLabel, formatCropName } from "../utils/areaUtils";
 import UnitSelector from "../components/UnitSelector";
 
 import "./FarmDetails.css";
@@ -45,7 +45,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
         minWidth: "180px"
       }}>
-        <p style={{ margin: "0 0 10px 0", fontWeights: "bold", fontSize: "1rem", color: "#f8fafc" }}>🌿 {label}</p>
+        <p style={{ margin: "0 0 10px 0", fontWeights: "bold", fontSize: "1rem", color: "#f8fafc" }}>🌿 {formatCropName(label)}</p>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
           <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Income:</span>
           <span style={{ color: "#22c55e", fontWeight: "600", fontSize: "0.85rem" }}>₹{income.toLocaleString()}</span>
@@ -361,7 +361,7 @@ function FarmDetails() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <strong style={{ color: "#222" }}>
-                        {(crop.name || crop).charAt(0).toUpperCase() + (crop.name || crop).slice(1)}
+                        {formatCropName(crop)}
                       </strong>
                       {crop.season && <span style={{ marginLeft: "10px", fontSize: "0.85rem", color: "#666" }}>({crop.season})</span>}
                     </div>
@@ -526,7 +526,7 @@ function FarmDetails() {
               <tbody>
                 {cropAnalytics.map((stat, idx) => (
                   <tr key={idx}>
-                    <td><strong>{stat.cropName.charAt(0).toUpperCase() + stat.cropName.slice(1)}</strong></td>
+                    <td><strong>{formatCropName(stat.cropName)}</strong></td>
                     <td className="fi-amount">₹{stat.income.toLocaleString()}</td>
                     <td style={{ color: "#f87171" }}>₹{stat.expense.toLocaleString()}</td>
                     <td style={{ color: stat.profit >= 0 ? "#4ade80" : "#f87171", fontWeight: "bold" }}>
@@ -541,7 +541,7 @@ function FarmDetails() {
           <div style={{ height: "350px", width: "100%", marginTop: "10px", animation: "fiSlideDown 0.3s ease-out" }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={cropAnalytics.map(s => ({ ...s, name: s.cropName.charAt(0).toUpperCase() + s.cropName.slice(1) }))}
+                data={cropAnalytics.map(s => ({ ...s, name: formatCropName(s.cropName) }))}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 barGap={8}
               >

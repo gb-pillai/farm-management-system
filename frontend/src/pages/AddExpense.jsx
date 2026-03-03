@@ -1,5 +1,6 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { formatCropName } from "../utils/areaUtils";
 import "./AddExpense.css";
 
 const AddExpense = () => {
@@ -195,7 +196,7 @@ const AddExpense = () => {
         >
           <option value="" disabled>Select Crop</option>
           {crops.map((crop, idx) => (
-            <option key={idx} value={crop.name}>{crop.name}</option>
+            <option key={idx} value={crop.name}>{formatCropName(crop.name)}</option>
           ))}
         </select>
 
