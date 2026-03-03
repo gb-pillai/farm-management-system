@@ -2,7 +2,7 @@ import sys
 import joblib
 import numpy as np
 import os
-
+import pandas as pd
 try:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,6 +22,7 @@ try:
     district = district.upper()
     season = season.capitalize()
 
+    # Validation
     if crop not in le_crop.classes_:
         raise ValueError(f"Unsupported Crop: {crop}")
 
@@ -31,29 +32,31 @@ try:
     if season not in le_season.classes_:
         raise ValueError(f"Unsupported Season: {season}")
 
+    # Encode inputs
     crop_encoded = le_crop.transform([crop])[0]
     district_encoded = le_district.transform([district])[0]
     season_encoded = le_season.transform([season])[0]
 
-    # 🚨 NOTICE: AREA REMOVED FROM MODEL INPUT
-    features = np.array([[ 
-        crop_encoded,
-        district_encoded,
-        season_encoded,
-        area,
-        year
-    ]])
+    # ✅ Correct feature order (NO AREA inside model)
 
-    # Model now predicts yield per hectare (tonnes/hectare)
-    predicted_per_hectare_tonnes = model.predict(features)[0]
 
-    # Multiply manually by area
-    total_tonnes = predicted_per_hectare_tonnes * area
+    features = pd.DataFrame([{
+        "Crop": crop_encoded,
+        "District": district_encoded,
+        "Season": season_encoded,
+        "Year": year
+    }])
 
-    # Convert to kg
+    # Predict yield per hectare (tonnes/hectare)
+    predicted_yield_per_hectare = model.predict(features)[0]
+
+    # Multiply by area to get total production
+    total_tonnes = predicted_yield_per_hectare * area
+
+    # Convert to kilograms
     total_kg = total_tonnes * 1000
 
-    print(total_kg)
+    print(round(total_kg, 2))
 
 except Exception as e:
     print(f"ERROR: {str(e)}")
