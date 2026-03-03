@@ -12,6 +12,7 @@ function Dashboard() {
   const [profitData, setProfitData] = useState([]);
   const [expenseCategoryData, setExpenseCategoryData] = useState([]);
   const [farmUsageData, setFarmUsageData] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const [summary, setSummary] = useState({
     totalFarms: 0,
@@ -89,7 +90,7 @@ function Dashboard() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
-    fetch(`http://localhost:5000/api/analytics/dashboard/profit/${userId}`)
+    fetch(`http://localhost:5000/api/analytics/dashboard/profit/${userId}?year=${selectedYear}`)
       .then((res) => res.json())
       .then((result) => {
         if (result.success) {
@@ -97,7 +98,7 @@ function Dashboard() {
         }
       })
       .catch((err) => console.error(err));
-  }, []);
+  }, [selectedYear]);
 
   // ==============================
   // FETCH EXPENSE CATEGORY DATA (ALL FARMS)
@@ -106,9 +107,7 @@ function Dashboard() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
-    fetch(
-      `http://localhost:5000/api/analytics/dashboard/expenses/${userId}`
-    )
+    fetch(`http://localhost:5000/api/analytics/dashboard/expenses/${userId}?year=${selectedYear}`)
       .then((res) => res.json())
       .then((result) => {
         if (result.success) {
@@ -116,7 +115,7 @@ function Dashboard() {
         }
       })
       .catch((err) => console.error(err));
-  }, []);
+  }, [selectedYear]);
 
   const username = localStorage.getItem("username") || "Farmer";
 
@@ -167,7 +166,30 @@ function Dashboard() {
 
       {/* ANALYTICS */}
       <section className="analytics-section">
-        <h2 className="section-title">📊 Analytics Overview</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <h2 className="section-title" style={{ margin: 0 }}>📊 Analytics Overview</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "0.85rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Analysis Year:</span>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              style={{
+                background: "#1e293b",
+                color: "#f1f5f9",
+                border: "1px solid #334155",
+                borderRadius: "6px",
+                padding: "4px 10px",
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                outline: "none"
+              }}
+            >
+              {[2024, 2025, 2026].map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <div className="charts-grid">
           <div className="chart-card">

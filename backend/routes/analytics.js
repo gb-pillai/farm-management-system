@@ -196,9 +196,18 @@ router.get("/expenses/monthly/:farmId", async (req, res) => {
 router.get("/dashboard/expenses/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
+    const year = req.query.year ? parseInt(req.query.year) : null;
+
+    const matchQuery = { userId: new mongoose.Types.ObjectId(userId) };
+    if (year) {
+      matchQuery.expenseDate = {
+        $gte: new Date(`${year}-01-01`),
+        $lte: new Date(`${year}-12-31`)
+      };
+    }
 
     const data = await Expense.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+      { $match: matchQuery },
       {
         $group: {
           _id: "$category",
@@ -216,19 +225,36 @@ router.get("/dashboard/expenses/:userId", async (req, res) => {
 router.get("/dashboard/profit/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
+    const year = req.query.year ? parseInt(req.query.year) : null;
 
     const farms = await Farm.find({ userId });
 
     const data = [];
 
     for (const farm of farms) {
+      const incomeMatch = { farmId: farm._id };
+      if (year) {
+        incomeMatch.soldDate = {
+          $gte: new Date(`${year}-01-01`),
+          $lte: new Date(`${year}-12-31`)
+        };
+      }
+
       const income = await Income.aggregate([
-        { $match: { farmId: farm._id } },
+        { $match: incomeMatch },
         { $group: { _id: null, total: { $sum: "$totalAmount" } } }
       ]);
 
+      const expenseMatch = { farmId: farm._id };
+      if (year) {
+        expenseMatch.expenseDate = {
+          $gte: new Date(`${year}-01-01`),
+          $lte: new Date(`${year}-12-31`)
+        };
+      }
+
       const expense = await Expense.aggregate([
-        { $match: { farmId: farm._id } },
+        { $match: expenseMatch },
         { $group: { _id: null, total: { $sum: "$amount" } } }
       ]);
 
