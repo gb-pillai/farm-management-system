@@ -13,13 +13,49 @@ export default function YieldAnalyticsPage() {
     area: "",
   });
 
+  const [areaUnit, setAreaUnit] = useState("hectare");
   const [weather, setWeather] = useState(null);
+  const [selectedSeason, setSelectedSeason] = useState("");
   const [predictedYield, setPredictedYield] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [farmLoading, setFarmLoading] = useState(true);
 
+  // ---------------------------
+  // SEASONAL AVERAGE DATA
+  // ---------------------------
+  const seasonalAverages = {
+    Kharif: { temp: 28, humidity: 90 },
+    Rabi: { temp: 25, humidity: 80 },
+    Summer: { temp: 32, humidity: 75 },
+    Winter: { temp: 24, humidity: 85 },
+    Autumn: { temp: 27, humidity: 82 },
+    "Whole Year": { temp: 27, humidity: 83 },
+  };
+
+  // ---------------------------
+  // Convert Area to Hectare
+  // ---------------------------
+  const convertToHectare = (area, unit) => {
+    let value = Number(area);
+    if (unit === "acre") return value * 0.404686;
+    if (unit === "cent") return value * 0.00404686;
+    return value;
+  };
+
+  // ---------------------------
+  // Get Current Season
+  // ---------------------------
+  const getCurrentSeason = () => {
+    const month = new Date().getMonth() + 1;
+    if (month >= 6 && month <= 9) return "Kharif";
+    if (month >= 10 || month <= 3) return "Rabi";
+    return "Summer";
+  };
+
+  // ---------------------------
   // Load Farm + History
+  // ---------------------------
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -34,6 +70,8 @@ export default function YieldAnalyticsPage() {
             area: farmRes.data.area || "",
           });
         }
+
+        setSelectedSeason(getCurrentSeason());
 
         const historyRes = await axios.get(
           `http://localhost:5000/api/yield/farm/${id}`
@@ -50,7 +88,9 @@ export default function YieldAnalyticsPage() {
     loadData();
   }, [id]);
 
-  // Weather Fetch
+  // ---------------------------
+  // Fetch Live Weather
+  // ---------------------------
   useEffect(() => {
     const fetchWeather = async () => {
       try {
@@ -72,13 +112,9 @@ export default function YieldAnalyticsPage() {
     fetchWeather();
   }, [farm.district]);
 
-  const getModelSeason = () => {
-    const month = new Date().getMonth() + 1;
-    if (month >= 6 && month <= 9) return "Kharif";
-    if (month >= 10 || month <= 3) return "Rabi";
-    return "Whole Year";
-  };
-
+  // ---------------------------
+  // Handle Prediction
+  // ---------------------------
   const handlePredict = async () => {
     if (!farm.cropType || !farm.district || !farm.area) {
       alert("Please fill Crop, District and Area before predicting.");
@@ -88,14 +124,30 @@ export default function YieldAnalyticsPage() {
     try {
       setLoading(true);
 
+      const areaInHectare = convertToHectare(farm.area, areaUnit);
+      const currentSeason = getCurrentSeason();
+
+      let temperature;
+      let humidity;
+
+      if (selectedSeason === currentSeason && weather) {
+        temperature = weather.temp;
+        humidity = weather.humidity;
+      } else {
+        temperature = seasonalAverages[selectedSeason]?.temp;
+        humidity = seasonalAverages[selectedSeason]?.humidity;
+      }
+
       const res = await axios.post(
         "http://localhost:5000/api/yield/predict",
         {
           farmId: id,
           crop: farm.cropType,
           district: farm.district.toUpperCase(),
-          season: getModelSeason(),
-          area: Number(farm.area),
+          season: selectedSeason,
+          area: areaInHectare,
+          temperature,
+          humidity,
           year: new Date().getFullYear(),
         }
       );
@@ -150,39 +202,73 @@ export default function YieldAnalyticsPage() {
                 }
               >
                 <option value="">Select District</option>
-                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
-                <option value="Kollam">Kollam</option>
-                <option value="Pathanamthitta">Pathanamthitta</option>
-                <option value="Alappuzha">Alappuzha</option>
-                <option value="Kottayam">Kottayam</option>
-                <option value="Idukki">Idukki</option>
-                <option value="Ernakulam">Ernakulam</option>
-                <option value="Thrissur">Thrissur</option>
-                <option value="Palakkad">Palakkad</option>
-                <option value="Malappuram">Malappuram</option>
-                <option value="Kozhikode">Kozhikode</option>
-                <option value="Wayanad">Wayanad</option>
-                <option value="Kannur">Kannur</option>
                 <option value="Kasaragod">Kasaragod</option>
+                <option value="Kannur">Kannur</option>
+                <option value="Wayanad">Wayanad</option>
+                <option value="Kozhikode">Kozhikode</option>
+                <option value="Malappuram">Malappuram</option>
+                <option value="Palakkad">Palakkad</option>
+                <option value="Thrissur">Thrissur</option>
+                <option value="Ernakulam">Ernakulam</option>
+                <option value="Idukki">Idukki</option>
+                <option value="Kottayam">Kottayam</option>
+                <option value="Alappuzha">Alappuzha</option>
+                <option value="Pathanamthitta">Pathanamthitta</option>
+                <option value="Kollam">Kollam</option>
+                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
               </select>
             </div>
 
             <div>
-              <label>Area (hectares)</label>
-              <input
-                type="number"
-                value={farm.area}
-                onChange={(e) =>
-                  setFarm({ ...farm, area: e.target.value })
-                }
-              />
+              <label>Area</label>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input
+                  type="number"
+                  value={farm.area}
+                  onChange={(e) =>
+                    setFarm({ ...farm, area: e.target.value })
+                  }
+                />
+                <select
+                  value={areaUnit}
+                  onChange={(e) => setAreaUnit(e.target.value)}
+                >
+                  <option value="hectare">Hectare</option>
+                  <option value="acre">Acre</option>
+                  <option value="cent">Cent</option>
+                </select>
+              </div>
             </div>
 
-            {weather && (
+            <div>
+              <label>Season</label>
+              <select
+                value={selectedSeason}
+                onChange={(e) => setSelectedSeason(e.target.value)}
+              >
+                <option value="Autumn">Autumn</option>
+                <option value="Kharif">Kharif</option>
+                <option value="Rabi">Rabi</option>
+                <option value="Summer">Summer</option>
+                <option value="Winter">Winter</option>
+              </select>
+            </div>
+
+            {(weather || seasonalAverages[selectedSeason]) && (
               <div className="weather-info">
-                <p><strong>Season:</strong> {getModelSeason()}</p>
-                <p><strong>Temperature:</strong> {weather.temp}°C</p>
-                <p><strong>Humidity:</strong> {weather.humidity}%</p>
+                <p><strong>Season:</strong> {selectedSeason}</p>
+                <p>
+                  <strong>Temperature:</strong>{" "}
+                  {selectedSeason === getCurrentSeason() && weather
+                    ? weather.temp
+                    : seasonalAverages[selectedSeason]?.temp}°C
+                </p>
+                <p>
+                  <strong>Humidity:</strong>{" "}
+                  {selectedSeason === getCurrentSeason() && weather
+                    ? weather.humidity
+                    : seasonalAverages[selectedSeason]?.humidity}%
+                </p>
               </div>
             )}
 
@@ -204,6 +290,7 @@ export default function YieldAnalyticsPage() {
 
         {history.length > 0 && (
           <div className="yield-table-container">
+            <h3>Prediction History</h3>
             <table className="yield-table">
               <thead>
                 <tr>
@@ -221,7 +308,7 @@ export default function YieldAnalyticsPage() {
                     <td>{new Date(item.createdAt).toLocaleDateString()}</td>
                     <td>{item.cropType}</td>
                     <td>{item.district}</td>
-                    <td>{item.area}</td>
+                    <td>{Number(item.area).toFixed(3)}</td>
                     <td>{item.season}</td>
                     <td>
                       {Number(item.predictedYield).toLocaleString(undefined, {
