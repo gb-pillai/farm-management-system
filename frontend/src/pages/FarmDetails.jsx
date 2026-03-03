@@ -168,70 +168,151 @@ function FarmDetails() {
 
               {editingCropId === (crop._id || idx) ? (
                 // ===== INLINE EDIT FORM =====
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} placeholder="Crop name" style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }} />
-                  <select value={editForm.season} onChange={e => setEditForm({ ...editForm, season: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }}>
-                    <option value="Monsoon">Monsoon</option>
-                    <option value="Post-Monsoon">Post-Monsoon</option>
-                    <option value="Summer">Summer</option>
-                    <option value="Winter">Winter</option>
-                    <option value="Perennial">Perennial (All-Year)</option>
-                  </select>
-                  <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Sown Date</label>
-                  <input type="date" value={editForm.sownDate ? editForm.sownDate.substring(0, 10) : ""} onChange={e => setEditForm({ ...editForm, sownDate: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }} />
-                  {editForm.season !== "Perennial" && (
-                    <>
-                      <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Expected Harvest</label>
-                      <input type="date" value={editForm.expectedHarvestDate ? editForm.expectedHarvestDate.substring(0, 10) : ""} onChange={e => setEditForm({ ...editForm, expectedHarvestDate: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }} />
-                    </>
-                  )}
-                  <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>Allocated Area ({shortLabel(unit)})</label>
-                  <input type="number" min="0" step="0.1" value={editForm.allocatedArea || ""} onChange={e => setEditForm({ ...editForm, allocatedArea: e.target.value })} placeholder={`e.g. 1.5 ${shortLabel(unit)}`} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }} />
-                  <select value={editForm.status} onChange={e => {
-                    const newStatus = e.target.value;
-                    if (newStatus !== "Harvested" && newStatus !== "Removed") {
-                      setEditForm({ ...editForm, status: newStatus, removalDate: "" });
-                    } else {
-                      setEditForm({ ...editForm, status: newStatus, removalDate: editForm.removalDate || new Date().toISOString().substring(0, 10) });
-                    }
-                  }} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }}>
-                    <option value="Growing">Growing</option>
-                    <option value="Planned">Planned</option>
-                    {editForm.season === "Perennial" ? (
-                      <option value="Removed">Removed</option>
-                    ) : (
-                      <>
-                        <option value="Harvested">Harvested</option>
-                        <option value="Removed">Removed (Crop Failed/Destroyed)</option>
-                      </>
+                <div className="crop-edit-form">
+                  <div className="form-group">
+                    <label className="form-label">Crop Name</label>
+                    <input
+                      className="form-input"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      placeholder="Enter crop name"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Season</label>
+                    <select
+                      className="form-select"
+                      value={editForm.season}
+                      onChange={(e) => setEditForm({ ...editForm, season: e.target.value })}
+                    >
+                      <option value="Monsoon">Monsoon</option>
+                      <option value="Post-Monsoon">Post-Monsoon</option>
+                      <option value="Summer">Summer</option>
+                      <option value="Winter">Winter</option>
+                      <option value="Perennial">Perennial (All-Year)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Sown Date</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={editForm.sownDate ? editForm.sownDate.substring(0, 10) : ""}
+                        onChange={(e) => setEditForm({ ...editForm, sownDate: e.target.value })}
+                      />
+                    </div>
+
+                    {editForm.season !== "Perennial" && (
+                      <div className="form-group">
+                        <label className="form-label">Expected Harvest</label>
+                        <input
+                          type="date"
+                          className="form-input"
+                          value={
+                            editForm.expectedHarvestDate
+                              ? editForm.expectedHarvestDate.substring(0, 10)
+                              : ""
+                          }
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, expectedHarvestDate: e.target.value })
+                          }
+                        />
+                      </div>
                     )}
-                  </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Allocated Area ({shortLabel(unit)})</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      className="form-input"
+                      value={editForm.allocatedArea || ""}
+                      onChange={(e) => setEditForm({ ...editForm, allocatedArea: e.target.value })}
+                      placeholder={`e.g. 1.5 ${shortLabel(unit)}`}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Status</label>
+                    <select
+                      className="form-select"
+                      value={editForm.status}
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
+                        if (newStatus !== "Harvested" && newStatus !== "Removed") {
+                          setEditForm({ ...editForm, status: newStatus, removalDate: "" });
+                        } else {
+                          setEditForm({
+                            ...editForm,
+                            status: newStatus,
+                            removalDate:
+                              editForm.removalDate || new Date().toISOString().substring(0, 10),
+                          });
+                        }
+                      }}
+                    >
+                      <option value="Growing">Growing</option>
+                      <option value="Planned">Planned</option>
+                      {editForm.season === "Perennial" ? (
+                        <option value="Removed">Removed</option>
+                      ) : (
+                        <>
+                          <option value="Harvested">Harvested</option>
+                          <option value="Removed">Removed (Crop Failed/Destroyed)</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+
                   {(editForm.status === "Harvested" || editForm.status === "Removed") && (
-                    <>
-                      <label style={{ fontSize: "0.8rem", color: "#555", marginBottom: "-4px" }}>
+                    <div className="form-group">
+                      <label className="form-label">
                         {editForm.status === "Removed" ? "Date Removed" : "Date Harvested (Actual)"}
                       </label>
-                      <input type="date" value={editForm.removalDate ? editForm.removalDate.substring(0, 10) : ""} onChange={e => setEditForm({ ...editForm, removalDate: e.target.value })} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }} />
-                    </>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={editForm.removalDate ? editForm.removalDate.substring(0, 10) : ""}
+                        onChange={(e) => setEditForm({ ...editForm, removalDate: e.target.value })}
+                      />
+                    </div>
                   )}
-                  <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                    <button onClick={async () => {
-                      try {
-                        const res = await fetch(`http://localhost:5000/api/farm/${farm._id}/crop/${crop._id}`, {
-                          method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editForm)
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                          setFarm(data.data);
-                          setEditingCropId(null);
-                        } else {
-                          alert(data.message || "Failed to save crop.");
+
+                  <div className="form-actions">
+                    <button
+                      className="save-btn"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(
+                            `http://localhost:5000/api/farm/${farm._id}/crop/${crop._id}`,
+                            {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(editForm),
+                            }
+                          );
+                          const data = await res.json();
+                          if (data.success) {
+                            setFarm(data.data);
+                            setEditingCropId(null);
+                          } else {
+                            alert(data.message || "Failed to save crop.");
+                          }
+                        } catch (error) {
+                          alert("An error occurred while saving the crop.");
                         }
-                      } catch (error) {
-                        alert("An error occurred while saving the crop.");
-                      }
-                    }} style={{ padding: "6px 14px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>💾 Save</button>
-                    <button onClick={() => setEditingCropId(null)} style={{ padding: "6px 14px", backgroundColor: "#888", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>Cancel</button>
+                      }}
+                    >
+                      💾 Save
+                    </button>
+                    <button className="cancel-btn" onClick={() => setEditingCropId(null)}>
+                      Cancel
+                    </button>
                   </div>
                 </div>
               ) : (
