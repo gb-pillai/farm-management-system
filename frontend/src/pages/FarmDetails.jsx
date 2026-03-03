@@ -320,7 +320,9 @@ function FarmDetails() {
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <strong style={{ color: "#222" }}>{crop.name || crop}</strong>
+                      <strong style={{ color: "#222" }}>
+                        {(crop.name || crop).charAt(0).toUpperCase() + (crop.name || crop).slice(1)}
+                      </strong>
                       {crop.season && <span style={{ marginLeft: "10px", fontSize: "0.85rem", color: "#666" }}>({crop.season})</span>}
                     </div>
                     <div style={{ display: "flex", gap: "6px" }}>

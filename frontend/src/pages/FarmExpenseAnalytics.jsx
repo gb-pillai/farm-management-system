@@ -242,7 +242,7 @@ const FarmExpenseAnalytics = () => {
               return (
                 <div key={cropName} className="fea-crop-card">
                   <div className="fea-crop-header">
-                    <span className="fea-crop-name">🌱 {cropName}</span>
+                    <span className="fea-crop-name">🌱 {cropName.charAt(0).toUpperCase() + cropName.slice(1)}</span>
                     <span className="fea-crop-total">Total: ₹ {cropTotal.toLocaleString()}</span>
                   </div>
                   <div className="fea-table-wrap">

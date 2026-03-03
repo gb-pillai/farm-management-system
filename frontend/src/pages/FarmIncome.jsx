@@ -225,7 +225,7 @@ function FarmIncome() {
               return (
                 <div key={cropName} className="fi-crop-card">
                   <div className="fi-crop-header">
-                    <span className="fi-crop-name">🌱 {cropName}</span>
+                    <span className="fi-crop-name">🌱 {cropName.charAt(0).toUpperCase() + cropName.slice(1)}</span>
                     <div className="fi-crop-stats">
                       <span className="fi-crop-income">Income: ₹ {cropTotal.toLocaleString()}</span>
                       {cropExpense > 0 && <span className="fi-crop-expense">Exp: ₹ {cropExpense.toLocaleString()}</span>}
