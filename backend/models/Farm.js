@@ -36,9 +36,10 @@ const FarmSchema = new mongoose.Schema(
         sownDate: { type: Date },
         expectedHarvestDate: { type: Date },
         allocatedArea: { type: Number, min: 0, default: 0 },
+        removalDate: { type: Date },
         status: {
           type: String,
-          enum: ["Growing", "Harvested", "Planned"],
+          enum: ["Growing", "Harvested", "Planned", "Removed"],
           default: "Growing"
         }
       }

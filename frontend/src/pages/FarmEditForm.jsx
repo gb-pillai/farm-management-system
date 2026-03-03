@@ -17,7 +17,7 @@ function FarmEditForm() {
     const [unit, setUnit] = useState(getPreferredUnit());
 
     // New crop state
-    const [newCrop, setNewCrop] = useState({ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "" });
+    const [newCrop, setNewCrop] = useState({ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "", status: "Growing", removalDate: "" });
     const [cropMessage, setCropMessage] = useState("");
     const [farmData, setFarmData] = useState(null); // to compute available area
 
@@ -73,7 +73,7 @@ function FarmEditForm() {
             const data = await res.json();
             if (data.success) {
                 setCropMessage("✅ Crop added successfully!");
-                setNewCrop({ name: "", season: "", sownDate: "", expectedHarvestDate: "" });
+                setNewCrop({ name: "", season: "", sownDate: "", expectedHarvestDate: "", status: "Growing", removalDate: "" });
             } else {
                 setCropMessage(data.message || "Failed to add crop");
             }
@@ -151,44 +151,35 @@ function FarmEditForm() {
 
             {/* Live land availability badge — recalculates based on selected dates */}
             {farmData && (() => {
-                const newStart = newCrop.sownDate ? new Date(newCrop.sownDate) : null;
-                const newEnd = newCrop.expectedHarvestDate ? new Date(newCrop.expectedHarvestDate) : null;
-                const today = new Date(); today.setHours(0, 0, 0, 0);
+                if (newStart && newEnd && exStart && exEnd) {
+                    // Both have dates: use temporal overlap check
+                    const overlaps = newStart <= exEnd && newEnd >= exStart;
+                    return overlaps ? sum + c.allocatedArea : sum;
+                }
 
-                const usedArea = (farmData.crops || []).reduce((sum, c) => {
-                    if (!c.allocatedArea) return sum;
-                    const exStart = c.sownDate ? new Date(c.sownDate) : null;
-                    const exEnd = c.expectedHarvestDate ? new Date(c.expectedHarvestDate) : null;
+                // Fallback: only count if crop is currently active (today within range)
+                if (exStart && exEnd) {
+                    const isActive = today >= exStart && today <= exEnd;
+                    return isActive ? sum + c.allocatedArea : sum;
+                }
 
-                    if (newStart && newEnd && exStart && exEnd) {
-                        // Both have dates: use temporal overlap check
-                        const overlaps = newStart <= exEnd && newEnd >= exStart;
-                        return overlaps ? sum + c.allocatedArea : sum;
-                    }
-
-                    // Fallback: only count if crop is currently active (today within range)
-                    if (exStart && exEnd) {
-                        const isActive = today >= exStart && today <= exEnd;
-                        return isActive ? sum + c.allocatedArea : sum;
-                    }
-
-                    // No dates at all: count it (safe default)
-                    return sum + c.allocatedArea;
-                }, 0);
-                const available = Math.max(0, (farmData.areaInAcres || 0) - usedArea);
-                const color = available === 0 ? "#e53935" : available < 1 ? "#ff9800" : "#4CAF50";
-                const dateLabel = newStart && newEnd
-                    ? `during ${newStart.toLocaleDateString()} – ${newEnd.toLocaleDateString()}`
-                    : "(showing currently active land usage)";
-                return (
-                    <div style={{ padding: "10px 14px", backgroundColor: "#1b2a1b", borderRadius: "8px", marginBottom: "16px", fontSize: "0.9rem", color: "#eee" }}>
-                        🗺️ <strong>Farm Area:</strong> {acresToDisplay(farmData.areaInAcres, unit).toFixed(2)} {shortLabel(unit)} &nbsp;|&nbsp;
-                        <strong style={{ color: "#aaa" }}>In Use: {acresToDisplay(usedArea, unit).toFixed(2)} {shortLabel(unit)}</strong> &nbsp;|&nbsp;
-                        <strong style={{ color }}>Available: {acresToDisplay(available, unit).toFixed(2)} {shortLabel(unit)}</strong>
-                        <div style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "4px" }}>📅 {dateLabel}</div>
-                        {available === 0 && <span style={{ color: "#e53935" }}>⚠️ No land free{newStart && newEnd ? " during this period" : " right now"}!</span>}
-                    </div>
-                );
+                // No dates at all: count it (safe default)
+                return sum + c.allocatedArea;
+            }, 0);
+            const available = Math.max(0, (farmData.areaInAcres || 0) - usedArea);
+            const color = available === 0 ? "#e53935" : available < 1 ? "#ff9800" : "#4CAF50";
+            const dateLabel = newStart && newEnd
+            ? `during ${newStart.toLocaleDateString()} – ${newEnd.toLocaleDateString()}`
+            : "(showing currently active land usage)";
+            return (
+            <div style={{ padding: "10px 14px", backgroundColor: "#1b2a1b", borderRadius: "8px", marginBottom: "16px", fontSize: "0.9rem", color: "#eee" }}>
+                🗺️ <strong>Farm Area:</strong> {acresToDisplay(farmData.areaInAcres, unit).toFixed(2)} {shortLabel(unit)} &nbsp;|&nbsp;
+                <strong style={{ color: "#aaa" }}>In Use: {acresToDisplay(usedArea, unit).toFixed(2)} {shortLabel(unit)}</strong> &nbsp;|&nbsp;
+                <strong style={{ color }}>Available: {acresToDisplay(available, unit).toFixed(2)} {shortLabel(unit)}</strong>
+                <div style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "4px" }}>📅 {dateLabel}</div>
+                {available === 0 && <span style={{ color: "#e53935" }}>⚠️ No land free{newStart && newEnd ? " during this period" : " right now"}!</span>}
+            </div>
+            );
             })()}
 
             <form className="farm-form" onSubmit={handleAddCrop}>
@@ -224,13 +215,28 @@ function FarmEditForm() {
                         />
                     </div>
                     <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: "0.85rem", color: "#aaa", display: "block", marginBottom: "4px" }}>Expected Harvest</label>
-                        <input
-                            type="date"
-                            value={newCrop.expectedHarvestDate}
-                            onChange={(e) => setNewCrop({ ...newCrop, expectedHarvestDate: e.target.value })}
-                            style={{ width: "100%", marginBottom: 0 }}
-                        />
+                        {newCrop.season !== "Perennial" ? (
+                            <>
+                                <label style={{ fontSize: "0.85rem", color: "#aaa", display: "block", marginBottom: "4px" }}>Expected Harvest</label>
+                                <input
+                                    type="date"
+                                    value={newCrop.expectedHarvestDate}
+                                    onChange={(e) => setNewCrop({ ...newCrop, expectedHarvestDate: e.target.value })}
+                                    style={{ width: "100%", marginBottom: 0 }}
+                                />
+                            </>
+                        ) : (
+                            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                                <label style={{ fontSize: "0.85rem", color: "#aaa", display: "block", marginBottom: "4px" }}>Removed Date (Optional)</label>
+                                <input
+                                    type="date"
+                                    value={newCrop.removalDate}
+                                    onChange={(e) => setNewCrop({ ...newCrop, removalDate: e.target.value, status: e.target.value ? "Removed" : "Growing" })}
+                                    style={{ width: "100%", marginBottom: 0 }}
+                                />
+                                {!newCrop.removalDate && <em style={{ fontSize: "0.75rem", color: "#888", marginTop: "4px" }}>Leave blank if still growing</em>}
+                            </div>
+                        )}
                     </div>
                 </div>
 

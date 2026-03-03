@@ -7,7 +7,7 @@ import "./FarmForm.css";
 function FarmForm() {
   const [farmName, setFarmName] = useState("");
   const [location, setLocation] = useState("");
-  const [crops, setCrops] = useState([{ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "" }]);
+  const [crops, setCrops] = useState([{ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "", status: "Growing", removalDate: "" }]);
   const [areaInAcres, setAreaInAcres] = useState("");
   const [season, setSeason] = useState("");
   const [yieldAmount, setYieldAmount] = useState("");
@@ -26,8 +26,9 @@ function FarmForm() {
 
     // Only count crops that are NOT already harvested (today <= expectedHarvestDate)
     const activeCrops = crops.filter(c => {
-      if (!c.expectedHarvestDate) return true; // no date = assume active
-      return today <= new Date(c.expectedHarvestDate);
+      if (!c.expectedHarvestDate && !c.removalDate) return true; // no date = assume active
+      const endDate = c.removalDate ? new Date(c.removalDate) : new Date(c.expectedHarvestDate);
+      return today <= endDate;
     });
 
     const totalAllocated = activeCrops.reduce((sum, c) => sum + (parseFloat(c.allocatedArea) || 0), 0);
@@ -36,7 +37,7 @@ function FarmForm() {
     for (let i = 0; i < activeCrops.length; i++) {
       const ci = activeCrops[i];
       const ciStart = ci.sownDate ? new Date(ci.sownDate) : null;
-      const ciEnd = ci.expectedHarvestDate ? new Date(ci.expectedHarvestDate) : null;
+      const ciEnd = ci.removalDate ? new Date(ci.removalDate) : (ci.expectedHarvestDate ? new Date(ci.expectedHarvestDate) : null);
       if (!ciStart || !ciEnd || !ci.allocatedArea) continue;
 
       let overlapTotal = parseFloat(ci.allocatedArea) || 0;
@@ -44,7 +45,7 @@ function FarmForm() {
         if (i === j) continue;
         const cj = activeCrops[j];
         const cjStart = cj.sownDate ? new Date(cj.sownDate) : null;
-        const cjEnd = cj.expectedHarvestDate ? new Date(cj.expectedHarvestDate) : null;
+        const cjEnd = cj.removalDate ? new Date(cj.removalDate) : (cj.expectedHarvestDate ? new Date(cj.expectedHarvestDate) : null);
         if (!cjStart || !cjEnd || !cj.allocatedArea) continue;
 
         if (ciStart <= cjEnd && ciEnd >= cjStart) {
@@ -108,7 +109,7 @@ function FarmForm() {
         setMessage("Farm added successfully");
         setFarmName("");
         setLocation("");
-        setCrops([{ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "" }]);
+        setCrops([{ name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "", status: "Growing", removalDate: "" }]);
         setAreaInAcres("");
         setSeason("");
         setYieldAmount("");
@@ -235,7 +236,7 @@ function FarmForm() {
                 setCrops(newCrops);
               }}
               required
-              style={{ marginBottom: 0, color: "#333" }}
+              style={{ marginBottom: 0 }}
             />
 
             <select
@@ -246,7 +247,7 @@ function FarmForm() {
                 setCrops(newCrops);
               }}
               required
-              style={{ padding: "10px", borderRadius: "4px", border: "1px solid #ccc", color: "#333" }}
+              style={{ padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
             >
               <option value="">Select Season for this Crop</option>
               <option value="Monsoon">Monsoon</option>
@@ -272,18 +273,38 @@ function FarmForm() {
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: "0.85rem", color: "#555" }}>Expected Harvest</label>
-                <input
-                  type="date"
-                  value={crop.expectedHarvestDate}
-                  onChange={(e) => {
-                    const newCrops = [...crops];
-                    newCrops[index].expectedHarvestDate = e.target.value;
-                    setCrops(newCrops);
-                  }}
-                  required
-                  style={{ width: "100%", marginBottom: 0 }}
-                />
+                {crop.season !== "Perennial" ? (
+                  <>
+                    <label style={{ fontSize: "0.85rem", color: "#555" }}>Expected Harvest</label>
+                    <input
+                      type="date"
+                      value={crop.expectedHarvestDate}
+                      onChange={(e) => {
+                        const newCrops = [...crops];
+                        newCrops[index].expectedHarvestDate = e.target.value;
+                        setCrops(newCrops);
+                      }}
+                      required
+                      style={{ width: "100%", marginBottom: 0 }}
+                    />
+                  </>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                    <label style={{ fontSize: "0.85rem", color: "#555", display: "block", marginBottom: "4px" }}>Removed Date (Optional)</label>
+                    <input
+                      type="date"
+                      value={crop.removalDate || ""}
+                      onChange={(e) => {
+                        const newCrops = [...crops];
+                        newCrops[index].removalDate = e.target.value;
+                        newCrops[index].status = e.target.value ? "Removed" : "Growing";
+                        setCrops(newCrops);
+                      }}
+                      style={{ width: "100%", marginBottom: 0 }}
+                    />
+                    {!crop.removalDate && <em style={{ fontSize: "0.75rem", color: "#888", marginTop: "4px" }}>Leave blank if still growing</em>}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -301,7 +322,7 @@ function FarmForm() {
                   newCrops[index].allocatedArea = e.target.value;
                   setCrops(newCrops);
                 }}
-                style={{ width: "100%", marginBottom: 0, color: "#333" }}
+                style={{ width: "100%", marginBottom: 0 }}
               />
             </div>
           </div>
@@ -309,7 +330,7 @@ function FarmForm() {
         <button
           type="button"
           className="add-crop-btn"
-          onClick={() => setCrops([...crops, { name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "" }])}
+          onClick={() => setCrops([...crops, { name: "", season: "", sownDate: "", expectedHarvestDate: "", allocatedArea: "", status: "Growing", removalDate: "" }])}
           style={{ marginBottom: "15px", padding: "8px 15px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.9rem" }}
         >
           ➕ Add Another Crop

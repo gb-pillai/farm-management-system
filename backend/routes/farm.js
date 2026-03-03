@@ -159,13 +159,23 @@ router.post("/:farmId/crop", async (req, res) => {
       if (!existing.allocatedArea) return sum;
 
       const exStart = existing.sownDate ? new Date(existing.sownDate) : null;
-      const exEnd = existing.expectedHarvestDate ? new Date(existing.expectedHarvestDate) : null;
+      let exEnd = existing.expectedHarvestDate ? new Date(existing.expectedHarvestDate) : null;
 
-      // If either the new or existing crop has no dates, they are treated as overlapping (safe default)
-      if (!newStart || !newEnd || !exStart || !exEnd) return sum + existing.allocatedArea;
+      // Handle custom statuses providing earlier end dates
+      if ((existing.status === "Removed" && existing.removalDate) ||
+        (existing.status === "Harvested" && existing.removalDate)) {
+        exEnd = new Date(existing.removalDate);
+      }
 
-      // Check date overlap: do the two intervals intersect?
-      const overlaps = newStart <= exEnd && newEnd >= exStart;
+      // Default behaviour if there are missing dates
+      if (!newStart && !newEnd) return sum + existing.allocatedArea;
+      if (!exStart && !exEnd) return sum + existing.allocatedArea;
+
+      // Calculate intersection
+      const overlapStart = !newStart ? exStart : (!exStart ? newStart : new Date(Math.max(newStart, exStart)));
+      const overlapEnd = !newEnd ? exEnd : (!exEnd ? newEnd : new Date(Math.min(newEnd, exEnd)));
+
+      const overlaps = !overlapEnd || overlapStart <= overlapEnd;
       return overlaps ? sum + existing.allocatedArea : sum;
     }, 0);
 
