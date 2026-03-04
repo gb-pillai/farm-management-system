@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Farm = require("../models/Farm");
+const Expense = require("../models/Expense");
+const Income = require("../models/Income");
 
 /*
   Phase-2 Farm Routes
@@ -270,6 +272,11 @@ router.delete("/:farmId", async (req, res) => {
     const { farmId } = req.params;
     const farm = await Farm.findByIdAndDelete(farmId);
     if (!farm) return res.status(404).json({ success: false, message: "Farm not found" });
+
+    // Cascade-delete all expenses and income linked to this farm
+    await Expense.deleteMany({ farmId });
+    await Income.deleteMany({ farmId });
+
     res.json({ success: true, message: "Farm deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error", error: error.message });

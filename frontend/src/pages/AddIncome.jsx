@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatCropName } from "../utils/areaUtils";
 import "./AddIncome.css";
 
 const AddIncome = () => {
-  const { farmId } = useParams();
+  const { farmId: routeFarmId, id } = useParams(); // id = incomeId (edit mode)
+  const isEdit = Boolean(id);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -14,32 +15,64 @@ const AddIncome = () => {
     totalAmount: 0,
     soldDate: "",
     notes: "",
+    farmId: routeFarmId || "",
   });
 
   const [farmCrops, setFarmCrops] = useState([]);
   const [loadingCrops, setLoadingCrops] = useState(true);
 
-  // Fetch crops for this farm
-  useState(() => {
-    if (farmId) {
-      fetch(`http://localhost:5000/api/farm/details/${farmId}`)
-        .then((res) => res.json())
-        .then((data) => {
+  // ✅ FETCH INCOME IN EDIT MODE + FARM CROPS
+  useEffect(() => {
+    const fetchEditData = async () => {
+      if (isEdit) {
+        try {
+          const res = await fetch(`http://localhost:5000/api/income/${id}`);
+          const data = await res.json();
           if (data.success) {
-            const crops = data.data.crops && data.data.crops.length > 0
-              ? data.data.crops.map(c => c.name || c)
-              : (data.data.cropName ? [data.data.cropName] : []);
-
-            setFarmCrops(crops);
-            if (crops.length > 0) {
-              setForm((prev) => ({ ...prev, cropName: crops[0] }));
-            }
+            const inc = data.income;
+            setForm({
+              cropName: inc.cropName || "",
+              quantity: inc.quantity || "",
+              pricePerUnit: inc.pricePerUnit || "",
+              totalAmount: inc.totalAmount || 0,
+              soldDate: inc.soldDate ? inc.soldDate.slice(0, 10) : "",
+              notes: inc.notes || "",
+              farmId: inc.farmId || "",
+            });
+            // Fetch crops for edit mode using the income's farmId
+            fetchCrops(inc.farmId);
           }
-          setLoadingCrops(false);
-        })
-        .catch(() => setLoadingCrops(false));
-    }
-  }, [farmId]);
+        } catch (err) {
+          console.error("Failed to load income for edit:", err);
+        }
+      } else {
+        fetchCrops(routeFarmId);
+      }
+    };
+
+    const fetchCrops = async (fId) => {
+      if (!fId) { setLoadingCrops(false); return; }
+      try {
+        const res = await fetch(`http://localhost:5000/api/farm/details/${fId}`);
+        const data = await res.json();
+        if (data.success) {
+          const crops = data.data.crops && data.data.crops.length > 0
+            ? data.data.crops.map(c => c.name || c)
+            : (data.data.cropName ? [data.data.cropName] : []);
+          setFarmCrops(crops);
+          if (!isEdit && crops.length > 0) {
+            setForm(prev => ({ ...prev, cropName: prev.cropName || crops[0] }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load farm crops:", err);
+      } finally {
+        setLoadingCrops(false);
+      }
+    };
+
+    fetchEditData();
+  }, [id, isEdit, routeFarmId]);
 
   const handleChange = (e) => {
     const updated = { ...form, [e.target.name]: e.target.value };
@@ -58,12 +91,18 @@ const AddIncome = () => {
 
     const payload = {
       ...form,
-      farmId,
+      farmId: form.farmId || routeFarmId,
       userId: localStorage.getItem("userId"),
     };
 
-    const res = await fetch("http://localhost:5000/api/income/add", {
-      method: "POST",
+    const url = isEdit
+      ? `http://localhost:5000/api/income/${id}`
+      : "http://localhost:5000/api/income/add";
+
+    const method = isEdit ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -71,17 +110,16 @@ const AddIncome = () => {
     const data = await res.json();
 
     if (data.success) {
-      navigate(`/farm/${farmId}/income`);
+      navigate(`/farm/${form.farmId || routeFarmId}/income`);
     }
   };
 
-
   return (
     <div className="add-income-container">
-      <button className="back-btn" onClick={() => navigate(`/farm/${farmId}`)}>
-        ⬅ Back to Farms
+      <button className="back-btn" onClick={() => navigate(`/farm/${form.farmId || routeFarmId}/income`)}>
+        ⬅ Back to Income
       </button>
-      <h2>🌾 Add Harvest Income</h2>
+      <h2>{isEdit ? "✏️ Edit Income" : "🌾 Add Harvest Income"}</h2>
 
       <form onSubmit={handleSubmit}>
         {!loadingCrops && farmCrops.length > 0 ? (
@@ -100,6 +138,7 @@ const AddIncome = () => {
           <input
             name="cropName"
             placeholder="Crop Name (Rice, Pepper, etc)"
+            value={form.cropName}
             onChange={handleChange}
             required
             style={{ width: "100%", padding: "10px", marginBottom: "15px", borderRadius: "5px", border: "1px solid #ccc" }}
@@ -110,6 +149,7 @@ const AddIncome = () => {
           type="number"
           name="quantity"
           placeholder="Quantity (kg)"
+          value={form.quantity}
           onChange={handleChange}
           required
         />
@@ -118,6 +158,7 @@ const AddIncome = () => {
           type="number"
           name="pricePerUnit"
           placeholder="Price per unit (₹)"
+          value={form.pricePerUnit}
           onChange={handleChange}
           required
         />
@@ -125,6 +166,7 @@ const AddIncome = () => {
         <input
           type="date"
           name="soldDate"
+          value={form.soldDate}
           onChange={handleChange}
           required
         />
@@ -132,12 +174,13 @@ const AddIncome = () => {
         <textarea
           name="notes"
           placeholder="Notes (optional)"
+          value={form.notes}
           onChange={handleChange}
         />
 
         <p><b>Total:</b> ₹ {form.totalAmount}</p>
 
-        <button type="submit">Save Income</button>
+        <button type="submit">{isEdit ? "Update Income" : "Save Income"}</button>
       </form>
     </div>
   );

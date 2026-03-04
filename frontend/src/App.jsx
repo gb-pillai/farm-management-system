@@ -35,6 +35,7 @@ function AppRoutes() {
       <Route path="/farm/:farmId/add-expense" element={<AddExpense />} />
       <Route path="/expenses/edit/:id" element={<AddExpense />} />
       <Route path="/farm/:farmId/income/add" element={<AddIncome />} />
+      <Route path="/farm/:farmId/income/edit/:id" element={<AddIncome />} />
       <Route path="/farm/:farmId/income" element={<FarmIncome />} />
       <Route path="/farm/:id/yield" element={<YieldAnalyticsPage />} />
       <Route path="/signup" element={<Signup />} />

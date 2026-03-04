@@ -32,4 +32,36 @@ router.get("/farm/:farmId", async (req, res) => {
   }
 });
 
+// ✅ GET SINGLE INCOME
+router.get("/:id", async (req, res) => {
+  try {
+    const income = await Income.findById(req.params.id);
+    if (!income) return res.status(404).json({ success: false, message: "Income not found" });
+    res.json({ success: true, income });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ✅ UPDATE INCOME
+router.put("/:id", async (req, res) => {
+  try {
+    const updated = await Income.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ success: false, message: "Income not found" });
+    res.json({ success: true, income: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ✅ DELETE INCOME
+router.delete("/:id", async (req, res) => {
+  try {
+    await Income.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Delete failed" });
+  }
+});
+
 module.exports = router;
