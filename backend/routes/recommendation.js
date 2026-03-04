@@ -64,6 +64,18 @@ router.post("/stages", (req, res) => {
   res.json({ stages });
 });
 
+const cropFertilizers = require("../data/cropFertilizers");
+
+router.get("/fertilizers/:crop", (req, res) => {
+
+  const crop = req.params.crop.toLowerCase();
+
+  const fertilizers = cropFertilizers[crop] || [];
+
+  res.json({ fertilizers });
+
+});
+
 const { spawn } = require("child_process");
 const path = require("path");
 

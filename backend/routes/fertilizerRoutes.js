@@ -102,6 +102,16 @@ router.get("/farm/:farmId", async (req, res) => {
   }
 });
 
+router.get("/fertilizers", (req, res) => {
+
+  const fertilizerSafety = require("../data/fertilizerSafety");
+
+  const list = Object.keys(fertilizerSafety);
+
+  res.json({ fertilizers: list });
+
+});
+
 router.get("/status", async (req, res) => {
   const today = new Date();
 
