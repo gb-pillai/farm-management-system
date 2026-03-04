@@ -101,8 +101,12 @@ function FarmIncome() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this income record?")) return;
-    await axios.delete(`http://localhost:5000/api/income/${id}`);
-    setAllIncome(prev => prev.filter(i => i._id !== id));
+    try {
+      await axios.delete(`http://localhost:5000/api/income/${id}`);
+      setAllIncome(prev => prev.filter(i => i._id !== id));
+    } catch (err) {
+      console.error("Delete income error:", err);
+    }
   };
 
   return (
