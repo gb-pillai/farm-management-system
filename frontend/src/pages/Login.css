@@ -50,6 +50,7 @@
 .login-container button {
     width: 100%;
     padding: 12px;
+    margin-left: 0px;
     border-radius: 8px;
     border: none;
     background: white;
